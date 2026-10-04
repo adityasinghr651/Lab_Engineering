@@ -1,12 +1,8 @@
-const http = require('http');
-const config = require('./config');
-const logMessage  = require('./logger');
+const app = require('./src/app');
+const config = require('./src/config');
+const { logMessage } = require('./src/utils/logger');
 
-const server = http.createServer((req,res)=>{
-  res.end(`Welcome to ${config.appName}`);
-});
-
-server.listen(config.port,()=>{
-  console.log(`${config.appName} running on port ${config.port}`);
-  console.log('Server started');
+app.listen(config.port, () => {
+  logMessage(`${config.appName} running on port ${config.port}`);
+  logMessage('Server started');
 });
