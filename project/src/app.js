@@ -1,15 +1,11 @@
-const express = require('express');
-const config = require('./config');
-const routes = require('./routes');
-const loggerMiddleware = require('./middleware/loggerMiddleware');
+// src/app.js
+// App ka core setup — abhi plain http module ke saath
 
-const app = express();
+const http = require('http');
+const { handleRequest } = require('./routes');
 
-// Middlewares
-app.use(express.json());
-app.use(loggerMiddleware);
-
-// Routes
-app.use('/', routes);
+// http.createServer ko hum yahan "app" bana rahe hain,
+// taaki server.js isko sirf start kare, logic yahan rahe
+const app = http.createServer(handleRequest);
 
 module.exports = app;

@@ -1,10 +1,9 @@
-const config = require('../config');
+// src/utils/logger.js
+// Lab 03 wala logger, yahan proper jagah par shift kiya
 
 function logMessage(message) {
-  if (config.logLevel !== 'error') {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] ${message}`);
-  }
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${message}`);
 }
 
 module.exports = { logMessage };
