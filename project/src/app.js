@@ -1,34 +1,40 @@
 // src/app.js
 const express = require('express');
+const requestLogger = require('./middleware/requestLogger');
+const errorHandler = require('./middleware/errorHandler');
 const { getHealth } = require('./controllers/health.controller');
 
 const app = express();
 
-app.use(express.json()); // body parsing ke liye
+app.use(express.json());
+app.use(requestLogger); // sabse pehle — har request log honi chahiye
 
 app.get('/', (req, res) => {
   res.send('Welcome to DevFlow');
 });
 
-app.get('/health', getHealth); // ab controller function seedha pass kar sakte hain
+const { checkApiKey } = require('./middleware/authMiddleware');
 
-app.get('/info', (req, res) => {
-  res.json({ app: 'DevFlow', version: '1.0.0', uptime: process.uptime() });
+app.get('/health', getHealth);
+
+app.get('/admin/stats', checkApiKey, (req, res) => {
+  res.json({ stats: 'secret data' });
 });
 
-app.get('/users/:id/profile', (req, res) => {
-  res.json({ userId: req.params.id, profile: 'placeholder' });
+app.get('/crash-test', (req, res, next) => {
+  try {
+    throw new Error('Intentional crash for testing');
+  } catch (err) {
+    next(err);
+  }
 });
 
-app.post('/users', (req, res) => {
-  const { name, email } = req.body;
-  res.status(201).json({ name, email });
-});
-
-// Agar koi route match na ho, Express automatically ek default 404 bhejta hai —
-// lekin hum apna custom 404 bhi likh sakte hain sabse end mein:
+// 404 handler — jab koi route match na ho
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
+
+// Error handler — SABSE END mein, 4 parameters wala
+app.use(errorHandler);
 
 module.exports = app;
