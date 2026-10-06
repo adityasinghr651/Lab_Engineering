@@ -1,23 +1,23 @@
-// src/routes/index.js
-// Routing logic ek jagah — kis URL par kaunsa controller call hoga
-// Abhi plain function hai (Express aane ke baad ye Router() object banega)
+// Route parameter — URL ke andar ek dynamic value
+// Ye line app.get() se PEHLE honi chahiye — taaki har request pe ye pehle chale
+app.use(express.json());
 
-const { getHealth } = require('../controllers/health.controller');
+app.post('/echo', (req, res) => {
+  // req.body — bina express.json() ke ye undefined hota, aur tumhe
+  // Lab 02 jaisa manually req.on('data')/req.on('end') karna padta
+  res.json({ youSent: req.body });
+});
+// Example: /users/42 → yahan 42 ek "parameter" hai jo badal sakta hai
+app.get('/users/:id', (req, res) => {
+  // req.params — Express automatically URL se parameters nikal ke yahan de deta hai
+  const userId = req.params.id;
+  res.json({ userId, message: `Fetching user ${userId}` });
+});
 
-function handleRequest(req, res) {
-  if (req.url === '/health' && req.method === 'GET') {
-    return getHealth(req, res);
-  }
-
-  if (req.url === '/' && req.method === 'GET') {
-    res.statusCode = 200;
-    res.end('Welcome to DevFlow');
-    return;
-  }
-
-  // Koi bhi route match na ho toh 404
-  res.statusCode = 404;
-  res.end('Not Found');
-}
-
-module.exports = { handleRequest };
+// Query string — URL ke baad ?key=value wale parts
+// Example: /search?name=aditya&page=2
+app.get('/search', (req, res) => {
+  // req.query — Express automatically query string ko object mein parse kar deta hai
+  const { name, page } = req.query;
+  res.json({ name, page });
+});
