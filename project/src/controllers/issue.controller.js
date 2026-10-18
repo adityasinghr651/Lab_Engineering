@@ -1,55 +1,45 @@
 // src/controllers/issue.controller.js
 const issueService = require('../services/issue.service');
 
-function getIssues(req, res, next) {
+async function getIssues(req, res, next) {
   try {
-    const issues = issueService.getAllIssues();
+    const issues = await issueService.getAllIssues();
     res.json(issues);
   } catch (err) {
     next(err);
   }
 }
 
-function getIssueById(req, res, next) {
+async function getIssueById(req, res, next) {
   try {
-    const issue = issueService.getIssueById(req.params.id);
-    if (!issue) {
-      return res.status(404).json({ error: 'Issue not found' });
-    }
+    const issue = await issueService.getIssueById(req.params.id);
     res.json(issue);
   } catch (err) {
     next(err);
   }
 }
 
-function createIssue(req, res, next) {
+async function createIssue(req, res, next) {
   try {
-    const { title } = req.body;
-    if (!title) {
-      return res.status(400).json({ error: 'Title is required' });
-    }
-    const newIssue = issueService.createIssue(req.body);
+    const newIssue = await issueService.createIssue(req.body);
     res.status(201).json(newIssue);
   } catch (err) {
     next(err);
   }
 }
 
-function updateIssue(req, res, next) {
+async function updateIssue(req, res, next) {
   try {
-    const updated = issueService.updateIssue(req.params.id, req.body);
-    if (!updated) {
-      return res.status(404).json({ error: 'Issue not found' });
-    }
+    const updated = await issueService.updateIssue(req.params.id, req.body);
     res.json(updated);
   } catch (err) {
     next(err);
   }
 }
 
-function deleteIssue(req, res, next) {
+async function deleteIssue(req, res, next) {
   try {
-    const deleted = issueService.deleteIssue(req.params.id);
+    const deleted = await issueService.deleteIssue(req.params.id);
     if (!deleted) {
       return res.status(404).json({ error: 'Issue not found' });
     }
@@ -64,6 +54,5 @@ module.exports = {
   getIssueById,
   createIssue,
   updateIssue,
-  deleteIssue
+  deleteIssue,
 };
-
