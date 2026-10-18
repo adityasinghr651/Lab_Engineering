@@ -29,6 +29,14 @@ app.get('/crash-test', (req, res, next) => {
   }
 });
 
+// Auth routes
+const authRoutes = require('./routes/auth.routes');
+app.use('/auth', authRoutes);
+
+// Project routes
+const projectRoutes = require('./routes/project.routes');
+app.use('/projects', projectRoutes);
+
 // Issues routes
 const issueRoutes = require('./routes/issue.routes');
 app.use('/issues', issueRoutes);
