@@ -3,7 +3,20 @@ const issueService = require('../services/issue.service');
 
 async function getIssues(req, res, next) {
   try {
-    const issues = await issueService.getAllIssues();
+    const filters = {
+      projectId: req.query.projectId || req.params.projectId,
+      status: req.query.status,
+      priority: req.query.priority,
+      assigneeId: req.query.assigneeId,
+      creatorId: req.query.creatorId,
+      search: req.query.search || req.query.q,
+      sortBy: req.query.sortBy,
+      order: req.query.order,
+      limit: req.query.limit,
+      page: req.query.page,
+      offset: req.query.offset,
+    };
+    const issues = await issueService.getAllIssues(filters);
     res.json(issues);
   } catch (err) {
     next(err);
@@ -21,7 +34,11 @@ async function getIssueById(req, res, next) {
 
 async function createIssue(req, res, next) {
   try {
-    const newIssue = await issueService.createIssue(req.body);
+    const data = {
+      ...req.body,
+      ...(req.params.projectId && { projectId: req.params.projectId }),
+    };
+    const newIssue = await issueService.createIssue(data, req.user?.id);
     res.status(201).json(newIssue);
   } catch (err) {
     next(err);
@@ -39,10 +56,7 @@ async function updateIssue(req, res, next) {
 
 async function deleteIssue(req, res, next) {
   try {
-    const deleted = await issueService.deleteIssue(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ error: 'Issue not found' });
-    }
+    await issueService.deleteIssue(req.params.id);
     res.json({ message: 'Issue deleted successfully' });
   } catch (err) {
     next(err);

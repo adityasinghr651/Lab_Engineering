@@ -19,8 +19,8 @@ describe('Issues API Integration Tests (PostgreSQL)', () => {
   });
 
   beforeEach(async () => {
-    // Reset test table and sequence before every test
-    await pool.query('TRUNCATE TABLE issues RESTART IDENTITY CASCADE;');
+    // Reset test tables and sequences before every test
+    await pool.query('TRUNCATE TABLE issues, projects, users RESTART IDENTITY CASCADE;');
   });
 
   after(async () => {
@@ -31,14 +31,45 @@ describe('Issues API Integration Tests (PostgreSQL)', () => {
     await pool.end();
   });
 
-  async function createTestIssue(data) {
+  async function createTestIssue(data, token) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
     const res = await fetch(`${baseUrl}/issues`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(data),
     });
     const body = await res.json();
     return { res, body };
+  }
+
+  async function setupUserAndProject() {
+    const userRes = await fetch(`${baseUrl}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Dev Tester',
+        email: 'tester@devflow.local',
+        password: 'password123',
+      }),
+    });
+    const userData = await userRes.json();
+
+    const projRes = await fetch(`${baseUrl}/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${userData.token}`,
+      },
+      body: JSON.stringify({
+        name: 'Backend Core',
+        key: 'BACK',
+        description: 'Core backend service',
+      }),
+    });
+    const projData = await projRes.json();
+
+    return { user: userData.user, token: userData.token, project: projData };
   }
 
   it('should create a valid issue with 201 status', async () => {
@@ -148,17 +179,140 @@ describe('Issues API Integration Tests (PostgreSQL)', () => {
       description: 'Check after deletion',
     });
 
-    // Delete the issue
     const delRes = await fetch(`${baseUrl}/issues/${created.id}`, {
       method: 'DELETE',
     });
     assert.equal(delRes.status, 200);
 
-    // Confirm subsequent retrieval fails with 404
     const getRes = await fetch(`${baseUrl}/issues/${created.id}`);
     const getBody = await getRes.json();
 
     assert.equal(getRes.status, 404);
     assert.equal(getBody.error, 'Issue not found');
+  });
+
+  it('should create a project-scoped issue with assignee and authenticated creator', async () => {
+    const { user, token, project } = await setupUserAndProject();
+
+    const { res, body } = await createTestIssue(
+      {
+        title: 'Implement database connection pooling',
+        description: 'Configure pool max size and queue timeouts',
+        priority: 'high',
+        projectId: project.id,
+        assigneeId: user.id,
+      },
+      token
+    );
+
+    assert.equal(res.status, 201);
+    assert.equal(body.projectId, project.id);
+    assert.equal(body.creatorId, user.id);
+    assert.equal(body.assigneeId, user.id);
+
+    const getRes = await fetch(`${baseUrl}/issues/${body.id}`);
+    const getBody = await getRes.json();
+
+    assert.equal(getRes.status, 200);
+    assert.equal(getBody.project.key, 'BACK');
+    assert.equal(getBody.creator.email, 'tester@devflow.local');
+    assert.equal(getBody.assignee.email, 'tester@devflow.local');
+  });
+
+  it('should reject issue creation when referenced project does not exist (404 status)', async () => {
+    const { token } = await setupUserAndProject();
+    const { res, body } = await createTestIssue(
+      {
+        title: 'Orphaned issue attempt',
+        projectId: 999999,
+      },
+      token
+    );
+
+    assert.equal(res.status, 404);
+    assert.equal(body.error, 'Project not found');
+  });
+
+  it('should reject issue creation when referenced assignee does not exist (404 status)', async () => {
+    const { token, project } = await setupUserAndProject();
+    const { res, body } = await createTestIssue(
+      {
+        title: 'Nonexistent assignee issue',
+        projectId: project.id,
+        assigneeId: 999999,
+      },
+      token
+    );
+
+    assert.equal(res.status, 404);
+    assert.equal(body.error, 'Assignee user not found');
+  });
+
+  it('should filter issues by projectId and status', async () => {
+    const { token, project } = await setupUserAndProject();
+
+    await createTestIssue(
+      { title: 'Project Issue 1', projectId: project.id, status: 'open' },
+      token
+    );
+    await createTestIssue(
+      { title: 'Project Issue 2', projectId: project.id, status: 'closed' },
+      token
+    );
+    await createTestIssue({ title: 'Unscoped Issue 3', status: 'open' });
+
+    const res = await fetch(`${baseUrl}/issues?projectId=${project.id}&status=open`);
+    const body = await res.json();
+
+    assert.equal(res.status, 200);
+    assert.equal(body.length, 1);
+    assert.equal(body[0].title, 'Project Issue 1');
+    assert.equal(body[0].projectId, project.id);
+  });
+
+  it('should create and retrieve issues via nested /projects/:projectId/issues route', async () => {
+    const { token, project } = await setupUserAndProject();
+
+    const createRes = await fetch(`${baseUrl}/projects/${project.id}/issues`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        title: 'Nested route created issue',
+        priority: 'high',
+      }),
+    });
+    const created = await createRes.json();
+
+    assert.equal(createRes.status, 201);
+    assert.equal(created.projectId, project.id);
+
+    const listRes = await fetch(`${baseUrl}/projects/${project.id}/issues`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const list = await listRes.json();
+
+    assert.equal(listRes.status, 200);
+    assert.ok(list.some((i) => i.id === created.id));
+  });
+
+  it('should cascade delete issues when parent project is deleted', async () => {
+    const { token, project } = await setupUserAndProject();
+
+    const { body: created } = await createTestIssue(
+      { title: 'Issue to cascade delete', projectId: project.id },
+      token
+    );
+
+    const delProjRes = await fetch(`${baseUrl}/projects/${project.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    assert.equal(delProjRes.status, 200);
+
+    const getIssueRes = await fetch(`${baseUrl}/issues/${created.id}`);
+    assert.equal(getIssueRes.status, 404);
   });
 });
