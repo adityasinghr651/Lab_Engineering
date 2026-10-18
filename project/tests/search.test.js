@@ -165,5 +165,19 @@ describe('Search, Sorting & Pagination API Integration Tests', () => {
     assert.equal(body.length, 5);
     assert.equal(body.pagination, undefined);
   });
+
+  it('should maintain deterministic ordering across pages using id tie-breaker', async () => {
+    // Both items 1 and 2 have priority='high'
+    const resPage1 = await fetch(`${baseUrl}/issues?priority=high&sortBy=priority&order=desc&limit=1&page=1`);
+    const bodyPage1 = await resPage1.json();
+    assert.equal(resPage1.status, 200);
+
+    const resPage2 = await fetch(`${baseUrl}/issues?priority=high&sortBy=priority&order=desc&limit=1&page=2`);
+    const bodyPage2 = await resPage2.json();
+    assert.equal(resPage2.status, 200);
+
+    assert.notEqual(bodyPage1.data[0].id, bodyPage2.data[0].id);
+    assert.ok(bodyPage1.data[0].id < bodyPage2.data[0].id);
+  });
 });
 

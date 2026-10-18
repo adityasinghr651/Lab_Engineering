@@ -4,6 +4,8 @@ const { describe, it, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const app = require('../src/app');
 const pool = require('../src/config/db');
+const { loginLimiter } = require('../src/middleware/rateLimiter');
+const { createAdminUser } = require('./helpers/testUtils');
 
 describe('Auth API Integration Tests (PostgreSQL + JWT)', () => {
   let server;
@@ -21,6 +23,7 @@ describe('Auth API Integration Tests (PostgreSQL + JWT)', () => {
   beforeEach(async () => {
     // Truncate users table before every test to ensure test isolation
     await pool.query('TRUNCATE TABLE users RESTART IDENTITY CASCADE;');
+    loginLimiter.reset();
   });
 
   after(async () => {
@@ -200,6 +203,94 @@ describe('Auth API Integration Tests (PostgreSQL + JWT)', () => {
 
     assert.equal(res.status, 401);
     assert.equal(body.error, 'Invalid or expired token');
+  });
+
+  it('should ignore role in registration and always assign member role', async () => {
+    const { res, body } = await registerUser({
+      name: 'Malicious Attacker',
+      email: 'hacker@example.com',
+      password: 'password123',
+      role: 'admin',
+    });
+
+    assert.equal(res.status, 201);
+    assert.equal(body.user.role, 'member');
+    assert.notEqual(body.user.role, 'admin');
+  });
+
+  it('should rate limit excessive login attempts and return 429 status', async () => {
+    await registerUser({
+      name: 'Rate Limit Target',
+      email: 'ratelimit@example.com',
+      password: 'password123',
+    });
+
+    // 5 allowed attempts
+    for (let i = 0; i < 5; i++) {
+      const { res } = await loginUser({
+        email: 'ratelimit@example.com',
+        password: 'wrongpassword',
+      });
+      assert.equal(res.status, 401);
+    }
+
+    // 6th attempt should be blocked with 429 Too Many Requests
+    const { res, body } = await loginUser({
+      email: 'ratelimit@example.com',
+      password: 'wrongpassword',
+    });
+    assert.equal(res.status, 429);
+    assert.ok(body.error.includes('Too many login attempts'));
+    assert.ok(res.headers.get('retry-after'));
+  });
+
+  it('should protect /admin/stats requiring valid admin JWT token', async () => {
+    // 1. Unauthenticated request -> 401
+    const unauthRes = await fetch(`${baseUrl}/admin/stats`);
+    assert.equal(unauthRes.status, 401);
+
+    // 2. Member request -> 403
+    const member = await registerUser({
+      name: 'Regular Member',
+      email: 'regular_member@example.com',
+      password: 'password123',
+    });
+    const memberRes = await fetch(`${baseUrl}/admin/stats`, {
+      headers: { Authorization: `Bearer ${member.body.token}` },
+    });
+    assert.equal(memberRes.status, 403);
+
+    // 3. Admin request -> 200
+    const admin = await createAdminUser({
+      name: 'Admin For Stats',
+      email: 'admin_stats@devflow.local',
+      password: 'adminpassword123',
+    });
+    const adminRes = await fetch(`${baseUrl}/admin/stats`, {
+      headers: { Authorization: `Bearer ${admin.token}` },
+    });
+    const adminBody = await adminRes.json();
+    assert.equal(adminRes.status, 200);
+    assert.equal(adminBody.stats, 'system operational');
+  });
+
+  it('should throw fatal error on boot when NODE_ENV=production and JWT_SECRET is missing or insecure', async () => {
+    const { execSync } = require('node:child_process');
+    assert.throws(
+      () => {
+        execSync(
+          'node -e "process.env.NODE_ENV=\'production\'; delete process.env.JWT_SECRET; require(\'./src/config\')"',
+          {
+            cwd: process.cwd(),
+            stdio: 'pipe',
+          }
+        );
+      },
+      (err) => {
+        const stderr = err.stderr ? err.stderr.toString() : '';
+        return stderr.includes('FATAL CONFIGURATION ERROR: In production mode, JWT_SECRET must be explicitly set');
+      }
+    );
   });
 });
 

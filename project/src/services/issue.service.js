@@ -43,7 +43,27 @@ async function createIssue(data, creatorId = null) {
   return await issueRepository.create(issueData);
 }
 
-async function updateIssue(id, updates) {
+async function updateIssue(id, updates, currentUser) {
+  const issue = await issueRepository.findById(id);
+  if (!issue) {
+    throw new AppError('Issue not found', 404);
+  }
+
+  let isAuthorized = currentUser && currentUser.role === 'admin';
+  if (!isAuthorized && currentUser && issue.creatorId === currentUser.id) {
+    isAuthorized = true;
+  }
+  if (!isAuthorized && currentUser && issue.projectId) {
+    const project = await projectRepository.findById(issue.projectId);
+    if (project && project.ownerId === currentUser.id) {
+      isAuthorized = true;
+    }
+  }
+
+  if (!isAuthorized) {
+    throw new AppError('Forbidden: You do not have permission to update this issue', 403);
+  }
+
   if (updates.projectId) {
     const project = await projectRepository.findById(updates.projectId);
     if (!project) {
@@ -65,11 +85,28 @@ async function updateIssue(id, updates) {
   return updated;
 }
 
-async function deleteIssue(id) {
-  const deleted = await issueRepository.remove(id);
-  if (!deleted) {
+async function deleteIssue(id, currentUser) {
+  const issue = await issueRepository.findById(id);
+  if (!issue) {
     throw new AppError('Issue not found', 404);
   }
+
+  let isAuthorized = currentUser && currentUser.role === 'admin';
+  if (!isAuthorized && currentUser && issue.creatorId === currentUser.id) {
+    isAuthorized = true;
+  }
+  if (!isAuthorized && currentUser && issue.projectId) {
+    const project = await projectRepository.findById(issue.projectId);
+    if (project && project.ownerId === currentUser.id) {
+      isAuthorized = true;
+    }
+  }
+
+  if (!isAuthorized) {
+    throw new AppError('Forbidden: You do not have permission to delete this issue', 403);
+  }
+
+  await issueRepository.remove(id);
   return true;
 }
 

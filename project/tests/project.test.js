@@ -4,6 +4,7 @@ const { describe, it, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const app = require('../src/app');
 const pool = require('../src/config/db');
+const { createAdminUser } = require('./helpers/testUtils');
 
 describe('Projects API Integration Tests (PostgreSQL + Auth)', () => {
   let server;
@@ -55,19 +56,13 @@ describe('Projects API Integration Tests (PostgreSQL + Auth)', () => {
     user2Token = data2.token;
     user2Id = data2.user.id;
 
-    const resAdmin = await fetch(`${baseUrl}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'System Admin',
-        email: 'admin@example.com',
-        password: 'adminpassword123',
-        role: 'admin',
-      }),
+    const adminData = await createAdminUser({
+      name: 'System Admin',
+      email: 'admin@example.com',
+      password: 'adminpassword123',
     });
-    const dataAdmin = await resAdmin.json();
-    adminToken = dataAdmin.token;
-    adminId = dataAdmin.user.id;
+    adminToken = adminData.token;
+    adminId = adminData.user.id;
   });
 
   after(async () => {

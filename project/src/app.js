@@ -13,21 +13,25 @@ app.get('/', (req, res) => {
   res.send('Welcome to DevFlow');
 });
 
-const { checkApiKey } = require('./middleware/authMiddleware');
+const { authenticate, authorize } = require('./middleware/auth.middleware');
 
 app.get('/health', getHealth);
 
-app.get('/admin/stats', checkApiKey, (req, res) => {
-  res.json({ stats: 'secret data' });
+// Admin stats protected by standard JWT authentication & admin authorization
+app.get('/admin/stats', authenticate, authorize('admin'), (req, res) => {
+  res.json({ stats: 'system operational' });
 });
 
-app.get('/crash-test', (req, res, next) => {
-  try {
-    throw new Error('Intentional crash for testing');
-  } catch (err) {
-    next(err);
-  }
-});
+// crash-test is strictly disabled in production
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/crash-test', (req, res, next) => {
+    try {
+      throw new Error('Intentional crash for testing');
+    } catch (err) {
+      next(err);
+    }
+  });
+}
 
 // Auth routes
 const authRoutes = require('./routes/auth.routes');

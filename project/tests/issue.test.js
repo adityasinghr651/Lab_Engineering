@@ -4,6 +4,7 @@ const { describe, it, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const app = require('../src/app');
 const pool = require('../src/config/db');
+const { createAdminUser } = require('./helpers/testUtils');
 
 describe('Issues API Integration Tests (PostgreSQL)', () => {
   let server;
@@ -122,11 +123,15 @@ describe('Issues API Integration Tests (PostgreSQL)', () => {
     assert.equal(body.error, 'Issue not found');
   });
 
-  it('should update an existing issue with 200 status', async () => {
-    const { body: created } = await createTestIssue({
-      title: 'Initial pending task',
-      description: 'Needs update',
-    });
+  it('should update an existing issue with 200 status when authenticated as creator', async () => {
+    const { token } = await setupUserAndProject();
+    const { body: created } = await createTestIssue(
+      {
+        title: 'Initial pending task',
+        description: 'Needs update',
+      },
+      token
+    );
 
     const updatePayload = {
       status: 'closed',
@@ -135,7 +140,10 @@ describe('Issues API Integration Tests (PostgreSQL)', () => {
 
     const res = await fetch(`${baseUrl}/issues/${created.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(updatePayload),
     });
     const body = await res.json();
@@ -147,14 +155,63 @@ describe('Issues API Integration Tests (PostgreSQL)', () => {
     assert.ok(body.updatedAt);
   });
 
-  it('should delete an existing issue successfully with 200 status', async () => {
-    const { body: created } = await createTestIssue({
-      title: 'Temporary item for delete test',
-      description: 'Will be deleted',
+  it('should reject issue update without authentication with 401 status', async () => {
+    const { token } = await setupUserAndProject();
+    const { body: created } = await createTestIssue({ title: 'Auth check issue' }, token);
+
+    const res = await fetch(`${baseUrl}/issues/${created.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'Unauthorized update' }),
     });
+    const body = await res.json();
+
+    assert.equal(res.status, 401);
+    assert.equal(body.error, 'Authentication required');
+  });
+
+  it('should reject issue update from another non-admin user with 403 status', async () => {
+    const { token: user1Token } = await setupUserAndProject();
+    const { body: created } = await createTestIssue({ title: 'User 1 owned issue' }, user1Token);
+
+    const user2Res = await fetch(`${baseUrl}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Attacker User',
+        email: 'attacker@devflow.local',
+        password: 'password123',
+      }),
+    });
+    const user2Data = await user2Res.json();
+
+    const res = await fetch(`${baseUrl}/issues/${created.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${user2Data.token}`,
+      },
+      body: JSON.stringify({ title: 'Hacked issue title' }),
+    });
+    const body = await res.json();
+
+    assert.equal(res.status, 403);
+    assert.equal(body.error, 'Forbidden: You do not have permission to update this issue');
+  });
+
+  it('should delete an existing issue successfully with 200 status when authenticated as creator', async () => {
+    const { token } = await setupUserAndProject();
+    const { body: created } = await createTestIssue(
+      {
+        title: 'Temporary item for delete test',
+        description: 'Will be deleted',
+      },
+      token
+    );
 
     const res = await fetch(`${baseUrl}/issues/${created.id}`, {
       method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
     });
     const body = await res.json();
 
@@ -162,10 +219,77 @@ describe('Issues API Integration Tests (PostgreSQL)', () => {
     assert.equal(body.message, 'Issue deleted successfully');
   });
 
+  it('should reject issue deletion without authentication with 401 status', async () => {
+    const { token } = await setupUserAndProject();
+    const { body: created } = await createTestIssue({ title: 'Issue for 401 delete test' }, token);
+
+    const res = await fetch(`${baseUrl}/issues/${created.id}`, {
+      method: 'DELETE',
+    });
+    const body = await res.json();
+
+    assert.equal(res.status, 401);
+    assert.equal(body.error, 'Authentication required');
+  });
+
+  it('should reject issue deletion from another non-admin user with 403 status', async () => {
+    const { token: user1Token } = await setupUserAndProject();
+    const { body: created } = await createTestIssue({ title: 'Doomed issue' }, user1Token);
+
+    const user2Res = await fetch(`${baseUrl}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Unauthorized Member',
+        email: 'member2@devflow.local',
+        password: 'password123',
+      }),
+    });
+    const user2Data = await user2Res.json();
+
+    const res = await fetch(`${baseUrl}/issues/${created.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${user2Data.token}` },
+    });
+    const body = await res.json();
+
+    assert.equal(res.status, 403);
+    assert.equal(body.error, 'Forbidden: You do not have permission to delete this issue');
+  });
+
+  it('should allow an admin to update and delete any issue', async () => {
+    const { token: user1Token } = await setupUserAndProject();
+    const { body: created } = await createTestIssue({ title: 'Member issue for admin' }, user1Token);
+
+    const { token: adminToken } = await createAdminUser({
+      name: 'Super Admin',
+      email: 'admin_issue_mod@devflow.local',
+      password: 'adminpassword123',
+    });
+
+    const updateRes = await fetch(`${baseUrl}/issues/${created.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({ title: 'Admin modified title' }),
+    });
+    assert.equal(updateRes.status, 200);
+
+    const deleteRes = await fetch(`${baseUrl}/issues/${created.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    assert.equal(deleteRes.status, 200);
+  });
+
   it('should return 404 when deleting a nonexistent issue', async () => {
+    const { token } = await setupUserAndProject();
     const nonExistentId = 999999;
     const res = await fetch(`${baseUrl}/issues/${nonExistentId}`, {
       method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
     });
     const body = await res.json();
 
@@ -174,13 +298,18 @@ describe('Issues API Integration Tests (PostgreSQL)', () => {
   });
 
   it('should confirm a deleted issue cannot be retrieved (404 status)', async () => {
-    const { body: created } = await createTestIssue({
-      title: 'Item to verify non-retrievability',
-      description: 'Check after deletion',
-    });
+    const { token } = await setupUserAndProject();
+    const { body: created } = await createTestIssue(
+      {
+        title: 'Item to verify non-retrievability',
+        description: 'Check after deletion',
+      },
+      token
+    );
 
     const delRes = await fetch(`${baseUrl}/issues/${created.id}`, {
       method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
     });
     assert.equal(delRes.status, 200);
 

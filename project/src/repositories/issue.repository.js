@@ -105,7 +105,10 @@ async function findAll(filters = {}) {
   const sortKey = (filters.sortBy || 'id').toLowerCase();
   const sortColumn = allowedSortFields[sortKey] || 'i.id';
   const sortOrder = (filters.order || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC';
-  const orderClause = `ORDER BY ${sortColumn} ${sortOrder}`;
+  const orderClause =
+    sortColumn === 'i.id'
+      ? `ORDER BY i.id ${sortOrder}`
+      : `ORDER BY ${sortColumn} ${sortOrder}, i.id ASC`;
 
   const isPaginated =
     filters.limit !== undefined || filters.page !== undefined || filters.offset !== undefined;

@@ -47,7 +47,7 @@ async function createIssue(req, res, next) {
 
 async function updateIssue(req, res, next) {
   try {
-    const updated = await issueService.updateIssue(req.params.id, req.body);
+    const updated = await issueService.updateIssue(req.params.id, req.body, req.user);
     res.json(updated);
   } catch (err) {
     next(err);
@@ -56,7 +56,7 @@ async function updateIssue(req, res, next) {
 
 async function deleteIssue(req, res, next) {
   try {
-    await issueService.deleteIssue(req.params.id);
+    await issueService.deleteIssue(req.params.id, req.user);
     res.json({ message: 'Issue deleted successfully' });
   } catch (err) {
     next(err);

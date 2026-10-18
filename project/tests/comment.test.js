@@ -4,6 +4,7 @@ const { describe, it, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const app = require('../src/app');
 const pool = require('../src/config/db');
+const { createAdminUser } = require('./helpers/testUtils');
 
 describe('Comments API Integration Tests (PostgreSQL + Auth)', () => {
   let server;
@@ -56,19 +57,13 @@ describe('Comments API Integration Tests (PostgreSQL + Auth)', () => {
     user2Token = data2.token;
     user2Id = data2.user.id;
 
-    // Register Admin
-    const resAdmin = await fetch(`${baseUrl}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'Admin Moderator',
-        email: 'admin@devflow.local',
-        password: 'adminpassword123',
-        role: 'admin',
-      }),
+    // Create Admin using secure test helper
+    const adminData = await createAdminUser({
+      name: 'Admin Moderator',
+      email: 'admin@devflow.local',
+      password: 'adminpassword123',
     });
-    const dataAdmin = await resAdmin.json();
-    adminToken = dataAdmin.token;
+    adminToken = adminData.token;
 
     // Create a Project and Issue to comment on
     const projRes = await fetch(`${baseUrl}/projects`, {
@@ -261,6 +256,7 @@ describe('Comments API Integration Tests (PostgreSQL + Auth)', () => {
     // Delete the issue
     const delIssueRes = await fetch(`${baseUrl}/issues/${testIssueId}`, {
       method: 'DELETE',
+      headers: { Authorization: `Bearer ${user1Token}` },
     });
     assert.equal(delIssueRes.status, 200);
 

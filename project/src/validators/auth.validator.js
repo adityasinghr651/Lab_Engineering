@@ -16,9 +16,6 @@ const registerSchema = z.object({
     .string({ required_error: 'Password is required' })
     .min(6, 'Password must be at least 6 characters')
     .max(128, 'Password cannot exceed 128 characters'),
-  role: z.enum(['admin', 'member'], {
-    errorMap: () => ({ message: "Role must be either 'admin' or 'member'" }),
-  }).optional(),
 });
 
 const loginSchema = z.object({

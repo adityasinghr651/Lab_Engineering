@@ -13,7 +13,16 @@ const server = app.listen(config.port, () => {
 
 async function gracefulShutdown(signal) {
   logMessage(`Received ${signal}. Closing server and database connections...`);
+
+  // Bounded shutdown watchdog: force exit if cleanup takes longer than 10 seconds
+  const shutdownWatchdog = setTimeout(() => {
+    console.error('Graceful shutdown timed out after 10000ms. Forcing process exit.');
+    process.exit(1);
+  }, 10000);
+  shutdownWatchdog.unref();
+
   server.close(async (err) => {
+    clearTimeout(shutdownWatchdog);
     if (err) {
       console.error('Error during HTTP server shutdown:', err);
     }

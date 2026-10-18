@@ -5,7 +5,7 @@ const config = require('../config');
 const userRepository = require('../repositories/user.repository');
 const AppError = require('../utils/AppError');
 
-async function register({ name, email, password, role = 'member' }) {
+async function register({ name, email, password }) {
   const normalizedEmail = email.toLowerCase().trim();
   const existingUser = await userRepository.findByEmail(normalizedEmail);
   if (existingUser) {
@@ -19,7 +19,7 @@ async function register({ name, email, password, role = 'member' }) {
     name: name.trim(),
     email: normalizedEmail,
     passwordHash,
-    role,
+    role: 'member', // Public registration always creates a member
   });
 
   const token = jwt.sign(
