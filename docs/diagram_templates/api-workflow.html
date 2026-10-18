@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0d14;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 30px 48px;
+    position: relative;
+  }
+  
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  .title-area h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .title-area h1 span.badge {
+    font-size: 13px;
+    font-weight: 600;
+    background: #431407;
+    color: #fb923c;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    border: 1px solid #ea580c;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .title-area p {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+  .meta-tags {
+    display: flex;
+    gap: 10px;
+  }
+  .tag {
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #1e293b;
+    color: #cbd5e1;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+  }
+
+  /* Workflows Grid */
+  .workflows-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .workflow-card {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+  }
+  .workflow-card:hover {
+    border-color: #334155;
+  }
+
+  /* Left Header of Card */
+  .wf-meta {
+    width: 260px;
+    flex-shrink: 0;
+    border-right: 1px solid #1e293b;
+    padding-right: 16px;
+  }
+  .wf-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: #60a5fa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .wf-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+  .wf-desc {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* Steps Flow */
+  .wf-steps {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .step-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px 14px;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .step-box.highlight-box {
+    border-color: #3b82f6;
+    background: #172554;
+  }
+
+  .step-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .http-chip {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .chip-post { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
+  .chip-get { background: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
+  .chip-put { background: #78350f; color: #fde68a; border: 1px solid #d97706; }
+  .chip-del { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
+
+  .status-chip {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: #10b981;
+  }
+  .status-chip.warn { color: #f59e0b; }
+
+  .step-route {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .step-detail {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.35;
+  }
+  .step-guard {
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    color: #cbd5e1;
+    background: #0f172a;
+    padding: 3px 6px;
+    border-radius: 4px;
+    margin-top: 2px;
+    border: 1px solid #334155;
+    display: inline-block;
+  }
+
+  /* Step Arrow */
+  .step-arrow {
+    font-size: 16px;
+    color: #475569;
+    flex-shrink: 0;
+  }
+
+  /* Footer Legend */
+  .footer-legend {
+    margin-top: 14px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 10px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  .legend-chips {
+    display: flex;
+    gap: 16px;
+  }
+  .l-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title-area">
+    <h1>DevFlow API Core Request Workflows <span class="badge">Verified Endpoints</span></h1>
+    <p>End-to-end execution paths illustrating authentication, authorization checks, data mutations, and deterministic queries</p>
+  </div>
+  <div class="meta-tags">
+    <div class="tag">REST API</div>
+    <div class="tag">JWT Bearer Auth</div>
+    <div class="tag">Zod Validation</div>
+    <div class="tag">Role-Based Access</div>
+    <div class="tag">Parameterized SQL</div>
+  </div>
+</div>
+
+<div class="workflows-container">
+
+  <!-- 1. AUTH WORKFLOW -->
+  <div class="workflow-card">
+    <div class="wf-meta">
+      <div class="wf-num">Workflow 01</div>
+      <div class="wf-title">User Onboarding & Session</div>
+      <div class="wf-desc">Registration with forced member role, rate-limited login, and profile fetching.</div>
+    </div>
+    <div class="wf-steps">
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-post">POST</span>
+          <span class="status-chip">201 Created</span>
+        </div>
+        <div class="step-route">/auth/register</div>
+        <div class="step-detail">Zod validates name/email/password &bull; Bcrypt hashes password (10 rounds) &bull; Forces <code>role='member'</code> &bull; Issues JWT</div>
+        <div class="step-guard">Guard: Public (role parameter ignored)</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-post">POST</span>
+          <span class="status-chip">200 OK / 429</span>
+        </div>
+        <div class="step-route">/auth/login</div>
+        <div class="step-detail">Sliding-window limiter checks IP (max 5 / 15m) &bull; Compares bcrypt hash &bull; Returns JWT token & sanitized user profile</div>
+        <div class="step-guard">Guard: loginLimiter (Retry-After header)</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-get">GET</span>
+          <span class="status-chip">200 OK</span>
+        </div>
+        <div class="step-route">/auth/me</div>
+        <div class="step-detail">Extracts Bearer token from header &bull; Verifies JWT signature &bull; Returns authenticated user metadata without password hash</div>
+        <div class="step-guard">Guard: authenticate (Bearer Token)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. PROJECT WORKFLOW -->
+  <div class="workflow-card">
+    <div class="wf-meta">
+      <div class="wf-num">Workflow 02</div>
+      <div class="wf-title">Project Provisioning & Scope</div>
+      <div class="wf-desc">Create workspace containers with unique alphanumeric keys and ownership binding.</div>
+    </div>
+    <div class="wf-steps">
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-post">POST</span>
+          <span class="status-chip">201 Created / 409</span>
+        </div>
+        <div class="step-route">/projects</div>
+        <div class="step-detail">Zod validates name (&ge;2) & key (2-10 alphanumeric) &bull; Verifies key uniqueness &bull; Sets <code>owner_id = req.user.id</code></div>
+        <div class="step-guard">Guard: authenticate &bull; Unique 23505 handler</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-get">GET</span>
+          <span class="status-chip">200 OK</span>
+        </div>
+        <div class="step-route">/projects /:id</div>
+        <div class="step-detail">Queries project with relational join on <code>users</code> &bull; Embeds owner object `{ id, name, email }` &bull; 404 if missing</div>
+        <div class="step-guard">Guard: authenticate</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-put">PUT</span>
+          <span class="status-chip">200 OK / 403</span>
+        </div>
+        <div class="step-route">/projects/:id</div>
+        <div class="step-detail">Checks ownership authorization: requesting user must be project owner or admin &bull; Updates name/description</div>
+        <div class="step-guard">Guard: authenticate + Resource Authorization</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ISSUE LIFECYCLE WORKFLOW -->
+  <div class="workflow-card">
+    <div class="wf-meta">
+      <div class="wf-num">Workflow 03</div>
+      <div class="wf-title">Issue Lifecycle & Assignment</div>
+      <div class="wf-desc">Track issues with creator binding, optional assignees, and strict authorization gates.</div>
+    </div>
+    <div class="wf-steps">
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-post">POST</span>
+          <span class="status-chip">201 Created</span>
+        </div>
+        <div class="step-route">/issues (or /projects/:id/issues)</div>
+        <div class="step-detail">Validates title (&ge;5), status, priority &bull; Binds <code>creator_id = req.user.id</code> & optional assignee &bull; Foreign key check</div>
+        <div class="step-guard">Guard: optionalAuth / authenticate</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step-box highlight-box">
+        <div class="step-header">
+          <span class="http-chip chip-put">PUT</span>
+          <span class="status-chip">200 OK / 403 Forbidden</span>
+        </div>
+        <div class="step-route">/issues/:id</div>
+        <div class="step-detail">Authorizes mutation: user MUST be issue creator, project owner, or admin &bull; Transitions status: open &rarr; in-progress &rarr; closed</div>
+        <div class="step-guard">Guard: authenticate + Strict RBAC Check</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-del">DELETE</span>
+          <span class="status-chip">200 OK / 403</span>
+        </div>
+        <div class="step-route">/issues/:id</div>
+        <div class="step-detail">Enforces creator/owner/admin authorization &bull; Cascades deletion of all child comments in PostgreSQL</div>
+        <div class="step-guard">Guard: authenticate + Cascade Foreign Key</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. DISCUSSION WORKFLOW -->
+  <div class="workflow-card">
+    <div class="wf-meta">
+      <div class="wf-num">Workflow 04</div>
+      <div class="wf-title">Issue Discussion & Comments</div>
+      <div class="wf-desc">Threaded conversation entries on issues with author attribution and deletion limits.</div>
+    </div>
+    <div class="wf-steps">
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-post">POST</span>
+          <span class="status-chip">201 Created / 404</span>
+        </div>
+        <div class="step-route">/issues/:issueId/comments</div>
+        <div class="step-detail">Validates content (non-empty) &bull; Checks issue existence in DB &bull; Binds <code>user_id = req.user.id</code> &bull; Returns comment</div>
+        <div class="step-guard">Guard: authenticate &bull; chk_comment_content_len</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-get">GET</span>
+          <span class="status-chip">200 OK</span>
+        </div>
+        <div class="step-route">/issues/:issueId/comments</div>
+        <div class="step-detail">Retrieves all comments ordered chronologically (<code>created_at ASC</code>) joined with author profiles `{ id, name, email }`</div>
+        <div class="step-guard">Guard: Public / Accessible</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-del">DELETE</span>
+          <span class="status-chip">200 OK / 403</span>
+        </div>
+        <div class="step-route">/issues/:id/comments/:commentId</div>
+        <div class="step-detail">Validates comment author: only the author who wrote the comment or a platform admin can delete it</div>
+        <div class="step-guard">Guard: authenticate + Author/Admin RBAC</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. SEARCH & PAGINATION WORKFLOW -->
+  <div class="workflow-card">
+    <div class="wf-meta">
+      <div class="wf-num">Workflow 05</div>
+      <div class="wf-title">Search, Filter & Pagination</div>
+      <div class="wf-desc">Deterministic multi-column query execution with metadata envelope.</div>
+    </div>
+    <div class="wf-steps">
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-get">GET</span>
+          <span class="status-chip">200 OK</span>
+        </div>
+        <div class="step-route">/issues?search=pool&status=open</div>
+        <div class="step-detail">Client specifies search term & status/priority filters &bull; Repository injects parameterized <code>ILIKE</code> conditions</div>
+        <div class="step-guard">SQL: (title ILIKE $1 OR description ILIKE $1)</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step-box highlight-box">
+        <div class="step-header">
+          <span class="http-chip chip-get">SORT</span>
+          <span class="status-chip">Deterministic</span>
+        </div>
+        <div class="step-route">&sortBy=priority&order=desc</div>
+        <div class="step-detail">Applies requested column sort and appends secondary tie-breaker <code>i.id ASC</code> to prevent pagination drift</div>
+        <div class="step-guard">SQL: ORDER BY i.priority DESC, i.id ASC</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step-box">
+        <div class="step-header">
+          <span class="http-chip chip-get">PAGINATE</span>
+          <span class="status-chip">Envelope JSON</span>
+        </div>
+        <div class="step-route">&limit=10&page=1</div>
+        <div class="step-detail">Window function <code>COUNT(*) OVER()</code> returns total matches &bull; Calculates totalPages & hasMore in JSON metadata</div>
+        <div class="step-guard">Envelope: { data: [...], pagination: {...} }</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-legend">
+  <div class="legend-chips">
+    <div class="l-item"><span class="http-chip chip-post">POST</span> Create / Action</div>
+    <div class="l-item"><span class="http-chip chip-get">GET</span> Retrieve / Query</div>
+    <div class="l-item"><span class="http-chip chip-put">PUT</span> Update / Transition</div>
+    <div class="l-item"><span class="http-chip chip-del">DELETE</span> Cascade Delete</div>
+  </div>
+  <div>
+    Layered Pattern: Route &rarr; Middleware &rarr; Controller &rarr; Service &rarr; Repository &rarr; PostgreSQL
+  </div>
+</div>
+
+</body>
+</html>
+

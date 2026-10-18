@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0d14;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 36px 48px;
+    position: relative;
+  }
+  
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+  }
+  .title-area h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .title-area h1 span.badge {
+    font-size: 13px;
+    font-weight: 600;
+    background: #1e3a8a;
+    color: #60a5fa;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    border: 1px solid #2563eb;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .title-area p {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+  .meta-tags {
+    display: flex;
+    gap: 10px;
+  }
+  .tag {
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #1e293b;
+    color: #cbd5e1;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+  }
+
+  /* Main Flow Grid */
+  .grid-flow {
+    display: grid;
+    grid-template-columns: 240px 280px 280px 300px 320px 280px;
+    gap: 16px;
+    flex: 1;
+    align-items: stretch;
+  }
+
+  /* Column Cards */
+  .col-tier {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .col-tier.highlight {
+    border-color: #3b82f6;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.08);
+  }
+  .tier-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #1e293b;
+  }
+  .tier-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .icon-blue { background: #1e3a8a; color: #60a5fa; }
+  .icon-purple { background: #581c87; color: #c084fc; }
+  .icon-indigo { background: #312e81; color: #818cf8; }
+  .icon-emerald { background: #064e3b; color: #34d399; }
+  .icon-amber { background: #78350f; color: #fbbf24; }
+  .icon-cyan { background: #164e63; color: #22d3ee; }
+
+  .tier-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f1f5f9;
+  }
+  .tier-sub {
+    font-size: 11px;
+    color: #64748b;
+    font-family: ui-monospace, monospace;
+  }
+
+  .box-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+  .box-item {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .box-item.accent-border {
+    border-left: 3px solid #3b82f6;
+  }
+  .box-item.emerald-border {
+    border-left: 3px solid #10b981;
+  }
+  .box-item.purple-border {
+    border-left: 3px solid #8b5cf6;
+  }
+  .box-item.amber-border {
+    border-left: 3px solid #f59e0b;
+  }
+  .box-item.cyan-border {
+    border-left: 3px solid #06b6d4;
+  }
+
+  .item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f8fafc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .item-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, monospace;
+    font-weight: 500;
+  }
+  .badge-post { background: #064e3b; color: #6ee7b7; }
+  .badge-get { background: #1e3a8a; color: #93c5fd; }
+  .badge-put { background: #78350f; color: #fde68a; }
+  .badge-del { background: #7f1d1d; color: #fca5a5; }
+  .badge-mw { background: #3730a3; color: #c7d2fe; }
+
+  .item-desc {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+  .item-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10.5px;
+    color: #cbd5e1;
+    background: #0f172a;
+    padding: 4px 6px;
+    border-radius: 4px;
+    margin-top: 5px;
+    border: 1px solid #1e293b;
+    word-break: break-all;
+  }
+
+  /* Bottom Bar */
+  .footer-bar {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 14px 20px;
+  }
+  .footer-col {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .footer-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .footer-info h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+  .footer-info p {
+    font-size: 11.5px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+
+  /* Connector indicators */
+  .connector {
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: #3b82f6;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #3b82f6;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title-area">
+    <h1>DevFlow Architecture & Request Lifecycle <span class="badge">Production Layering</span></h1>
+    <p>Layered Node.js / Express 5 REST API with PostgreSQL connection pooling, JWT RBAC, and Zod validation</p>
+  </div>
+  <div class="meta-tags">
+    <div class="tag">Node.js 22+</div>
+    <div class="tag">Express 5</div>
+    <div class="tag">PostgreSQL 16</div>
+    <div class="tag">Zod v4</div>
+    <div class="tag">JWT / bcrypt</div>
+  </div>
+</div>
+
+<div class="grid-flow">
+  <!-- 1. Client & Network Tier -->
+  <div class="col-tier">
+    <div class="tier-header">
+      <div class="tier-icon icon-blue">1</div>
+      <div>
+        <div class="tier-title">Client & Entry</div>
+        <div class="tier-sub">HTTP / REST Clients</div>
+      </div>
+    </div>
+    <div class="box-list">
+      <div class="box-item accent-border">
+        <div class="item-title">REST Consumer</div>
+        <div class="item-desc">Frontend SPA, mobile clients, and cURL / Postman callers sending JSON bodies and Bearer JWTs.</div>
+      </div>
+      <div class="box-item">
+        <div class="item-title">Port 3000 Gateway</div>
+        <div class="item-desc">Configured via <code>process.env.PORT</code> in <code>server.js</code> with Express 5 application instance.</div>
+      </div>
+      <div class="box-item">
+        <div class="item-title">Global Middleware</div>
+        <div class="item-desc"><code>express.json()</code> body parsing + <code>requestLogger</code> capturing method, URL, status, and duration.</div>
+        <div class="item-code">ENABLE_REQUEST_LOGGING</div>
+      </div>
+    </div>
+    <div class="connector"></div>
+  </div>
+
+  <!-- 2. Security & Guard Tier -->
+  <div class="col-tier">
+    <div class="tier-header">
+      <div class="tier-icon icon-purple">2</div>
+      <div>
+        <div class="tier-title">Security Guards</div>
+        <div class="tier-sub">src/middleware/</div>
+      </div>
+    </div>
+    <div class="box-list">
+      <div class="box-item purple-border">
+        <div class="item-title">Rate Limiter <span class="item-badge badge-mw">429</span></div>
+        <div class="item-desc">Sliding-window limiter on <code>POST /auth/login</code>. Caps brute-force attempts to 5 per 15 min with <code>Retry-After</code>.</div>
+      </div>
+      <div class="box-item purple-border">
+        <div class="item-title">JWT Authenticate <span class="item-badge badge-mw">401</span></div>
+        <div class="item-desc">Extracts Bearer token, verifies against <code>JWT_SECRET</code>, and attaches <code>req.user = { id, email, role }</code>.</div>
+      </div>
+      <div class="box-item purple-border">
+        <div class="item-title">RBAC Authorize <span class="item-badge badge-mw">403</span></div>
+        <div class="item-desc">Role check middleware: <code>authorize('admin')</code> gates administrative stats and elevated mutations.</div>
+      </div>
+      <div class="box-item purple-border">
+        <div class="item-title">Zod Validator <span class="item-badge badge-mw">400</span></div>
+        <div class="item-desc">Validates payload schemas for Auth, Projects, Issues, and Comments; fails early with field details.</div>
+      </div>
+    </div>
+    <div class="connector"></div>
+  </div>
+
+  <!-- 3. Routing Tier -->
+  <div class="col-tier">
+    <div class="tier-header">
+      <div class="tier-icon icon-indigo">3</div>
+      <div>
+        <div class="tier-title">Routing Tier</div>
+        <div class="tier-sub">src/routes/</div>
+      </div>
+    </div>
+    <div class="box-list">
+      <div class="box-item">
+        <div class="item-title">/auth <span class="item-badge badge-post">POST</span></div>
+        <div class="item-code">/register, /login, /me</div>
+      </div>
+      <div class="box-item">
+        <div class="item-title">/projects <span class="item-badge badge-get">CRUD</span></div>
+        <div class="item-code">GET, POST, PUT, DELETE</div>
+      </div>
+      <div class="box-item">
+        <div class="item-title">/issues <span class="item-badge badge-get">CRUD</span></div>
+        <div class="item-desc">Query search, status, priority, deterministic ordering.</div>
+        <div class="item-code">/:projectId/issues (nested)</div>
+      </div>
+      <div class="box-item">
+        <div class="item-title">/comments <span class="item-badge badge-post">CRUD</span></div>
+        <div class="item-code">/issues/:id/comments</div>
+      </div>
+      <div class="box-item">
+        <div class="item-title">Ops & Health</div>
+        <div class="item-code">/health, /admin/stats</div>
+      </div>
+    </div>
+    <div class="connector"></div>
+  </div>
+
+  <!-- 4. Controller & Service Tier -->
+  <div class="col-tier highlight">
+    <div class="tier-header">
+      <div class="tier-icon icon-emerald">4</div>
+      <div>
+        <div class="tier-title">Domain & Services</div>
+        <div class="tier-sub">src/services/ & controllers/</div>
+      </div>
+    </div>
+    <div class="box-list">
+      <div class="box-item emerald-border">
+        <div class="item-title">auth.service.js</div>
+        <div class="item-desc">Bcrypt hash (10 rounds), public role immutability (always <code>member</code>), JWT token generation with expiration.</div>
+      </div>
+      <div class="box-item emerald-border">
+        <div class="item-title">project.service.js</div>
+        <div class="item-desc">Unique key verification, project lifecycle, ownership authorization checks for updates and deletions.</div>
+      </div>
+      <div class="box-item emerald-border">
+        <div class="item-title">issue.service.js</div>
+        <div class="item-desc">Resource-level authorization: creators, project owners, or admins can update status/priority or delete issues.</div>
+      </div>
+      <div class="box-item emerald-border">
+        <div class="item-title">comment.service.js</div>
+        <div class="item-desc">Issue association validation, author/admin deletion boundaries, cascade cleanup handlers.</div>
+      </div>
+    </div>
+    <div class="connector"></div>
+  </div>
+
+  <!-- 5. Repository Tier -->
+  <div class="col-tier">
+    <div class="tier-header">
+      <div class="tier-icon icon-amber">5</div>
+      <div>
+        <div class="tier-title">Data Access Tier</div>
+        <div class="tier-sub">src/repositories/</div>
+      </div>
+    </div>
+    <div class="box-list">
+      <div class="box-item amber-border">
+        <div class="item-title">user.repository.js</div>
+        <div class="item-desc">Parameterized SQL queries: <code>findByEmail</code>, <code>findById</code>, <code>create</code>. Prevents SQL injection.</div>
+      </div>
+      <div class="box-item amber-border">
+        <div class="item-title">project.repository.js</div>
+        <div class="item-desc">Relational joins with <code>users</code> for owner metadata; unique key collision handling via code 23505.</div>
+      </div>
+      <div class="box-item amber-border">
+        <div class="item-title">issue.repository.js</div>
+        <div class="item-desc">Dynamic query builder: <code>ILIKE</code> search across title/description, multi-filter conditions, deterministic <code>ORDER BY &hellip;, i.id ASC</code>, and windowed <code>COUNT(*) OVER()</code> pagination.</div>
+      </div>
+      <div class="box-item amber-border">
+        <div class="item-title">comment.repository.js</div>
+        <div class="item-desc">Chronological comment streams joined with author profiles.</div>
+      </div>
+    </div>
+    <div class="connector"></div>
+  </div>
+
+  <!-- 6. Database Tier -->
+  <div class="col-tier">
+    <div class="tier-header">
+      <div class="tier-icon icon-cyan">6</div>
+      <div>
+        <div class="tier-title">PostgreSQL Tier</div>
+        <div class="tier-sub">src/config/db.js</div>
+      </div>
+    </div>
+    <div class="box-list">
+      <div class="box-item cyan-border">
+        <div class="item-title">Connection Pool</div>
+        <div class="item-desc">Bounded <code>pg.Pool</code> managing concurrent client connections:</div>
+        <div class="item-code">max: 20 | idle: 30s | timeout: 5s</div>
+      </div>
+      <div class="box-item">
+        <div class="item-title">users table</div>
+        <div class="item-desc">id (PK), name, email (UQ), password_hash, role (admin/member), timestamps.</div>
+      </div>
+      <div class="box-item">
+        <div class="item-title">projects table</div>
+        <div class="item-desc">id (PK), name, key (UQ), owner_id (FK &rarr; users.id ON DELETE CASCADE).</div>
+      </div>
+      <div class="box-item">
+        <div class="item-title">issues table</div>
+        <div class="item-desc">id (PK), title, status, priority, project_id (FK), creator_id (FK), assignee_id (FK).</div>
+      </div>
+      <div class="box-item">
+        <div class="item-title">comments table</div>
+        <div class="item-desc">id (PK), issue_id (FK &rarr; issues.id), user_id (FK &rarr; users.id), content.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cross-Cutting Reliability & Resilience Bar -->
+<div class="footer-bar">
+  <div class="footer-col">
+    <div class="footer-icon">⚠️</div>
+    <div class="footer-info">
+      <h4>Centralized Error Handling Architecture (src/middleware/errorHandler.js)</h4>
+      <p>Custom <code>AppError</code> operational codes, Zod validation formatting (400), PostgreSQL duplicate key 23505 (409 Conflict), JWT expiry (401), and sanitized 500 internal server error shielding.</p>
+    </div>
+  </div>
+  <div class="footer-col">
+    <div class="footer-icon">🛡️</div>
+    <div class="footer-info">
+      <h4>Resilience & Lifecycle Management (server.js & src/config/)</h4>
+      <p>10s Bounded Graceful Shutdown watchdog (terminates hung connections on SIGTERM/SIGINT), boot-time JWT secret fail-fast validation in production, and optional connection pool latency metrics (<code>TRACK_POOL_METRICS</code>).</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+

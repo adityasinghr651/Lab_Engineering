@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0d14;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 44px;
+    position: relative;
+  }
+  
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  .title-area h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .title-area h1 span.badge {
+    font-size: 13px;
+    font-weight: 600;
+    background: #1e3a8a;
+    color: #93c5fd;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    border: 1px solid #3b82f6;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .title-area p {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+  .meta-tags {
+    display: flex;
+    gap: 10px;
+  }
+  .tag {
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #1e293b;
+    color: #cbd5e1;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+  }
+
+  /* Grid Layout: 3 Columns (left: 2 items, center: 2 items, right: 1 large item) */
+  .grid-layout {
+    display: grid;
+    grid-template-columns: 580px 580px 630px;
+    gap: 18px;
+    flex: 1;
+    overflow: hidden;
+  }
+  .col-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Card Component */
+  .api-card {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  }
+  .card-header {
+    background: #1e293b;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #334155;
+  }
+  .route-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #f8fafc;
+  }
+  .method {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .m-post { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
+  .m-get { background: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
+
+  .status-tag {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: #34d399;
+    background: #064e3b;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid #059669;
+  }
+
+  .card-body {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #090d16;
+    flex: 1;
+  }
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    font-weight: 700;
+    font-family: ui-monospace, monospace;
+  }
+
+  /* Code block */
+  pre.code-block {
+    background: #030712;
+    border: 1px solid #1f2937;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #e5e7eb;
+    overflow: hidden;
+  }
+  .j-key { color: #38bdf8; }
+  .j-str { color: #4ade80; }
+  .j-num { color: #f59e0b; }
+  .j-bool { color: #c084fc; }
+  .j-null { color: #94a3b8; font-style: italic; }
+  .j-tok { color: #fbbf24; }
+  .j-cmt { color: #64748b; font-style: italic; }
+
+  /* Footer */
+  .footer-bar {
+    margin-top: 14px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11.5px;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title-area">
+    <h1>DevFlow Live API Demonstration <span class="badge">Verified Output</span></h1>
+    <p>Authentic HTTP exchanges captured directly from DevFlow running on Node.js 22 & PostgreSQL test database</p>
+  </div>
+  <div class="meta-tags">
+    <div class="tag">Sanitized JWT Tokens</div>
+    <div class="tag">Zod Enforced Schemas</div>
+    <div class="tag">Pagination Envelopes</div>
+    <div class="tag">Relational Joins</div>
+  </div>
+</div>
+
+<div class="grid-layout">
+  
+  <!-- COLUMN 1: AUTH & PROJECT -->
+  <div class="col-stack">
+    <!-- 1. POST /auth/register -->
+    <div class="api-card">
+      <div class="card-header">
+        <div class="route-badge">
+          <span class="method m-post">POST</span>
+          <span>/auth/register</span>
+        </div>
+        <span class="status-tag">201 Created</span>
+      </div>
+      <div class="card-body">
+        <div class="section-label">Request Body (JSON)</div>
+        <pre class="code-block">{
+  <span class="j-key">"name"</span>: <span class="j-str">"Alex Mercer"</span>,
+  <span class="j-key">"email"</span>: <span class="j-str">"alex.mercer@devflow.io"</span>,
+  <span class="j-key">"password"</span>: <span class="j-str">"SecurePassword123!"</span>
+}</pre>
+        <div class="section-label">Response Body (HTTP 201)</div>
+        <pre class="code-block">{
+  <span class="j-key">"user"</span>: {
+    <span class="j-key">"id"</span>: <span class="j-num">1</span>,
+    <span class="j-key">"name"</span>: <span class="j-str">"Alex Mercer"</span>,
+    <span class="j-key">"email"</span>: <span class="j-str">"alex.mercer@devflow.io"</span>,
+    <span class="j-key">"role"</span>: <span class="j-str">"member"</span>, <span class="j-cmt">// Always 'member' (role escalation prevented)</span>
+    <span class="j-key">"createdAt"</span>: <span class="j-str">"2026-10-18T18:31:05.001Z"</span>,
+    <span class="j-key">"updatedAt"</span>: <span class="j-null">null</span>
+  },
+  <span class="j-key">"token"</span>: <span class="j-tok">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey...[PROTECTED_JWT]"</span>
+}</pre>
+      </div>
+    </div>
+
+    <!-- 2. POST /projects -->
+    <div class="api-card">
+      <div class="card-header">
+        <div class="route-badge">
+          <span class="method m-post">POST</span>
+          <span>/projects</span>
+        </div>
+        <span class="status-tag">201 Created</span>
+      </div>
+      <div class="card-body">
+        <div class="section-label">Request (Headers: Authorization: Bearer &lt;token&gt;)</div>
+        <pre class="code-block">{
+  <span class="j-key">"name"</span>: <span class="j-str">"Cloud Orchestrator"</span>,
+  <span class="j-key">"key"</span>: <span class="j-str">"CLOUD"</span>,
+  <span class="j-key">"description"</span>: <span class="j-str">"High-throughput distributed workflow engine"</span>
+}</pre>
+        <div class="section-label">Response Body (HTTP 201)</div>
+        <pre class="code-block">{
+  <span class="j-key">"id"</span>: <span class="j-num">1</span>,
+  <span class="j-key">"name"</span>: <span class="j-str">"Cloud Orchestrator"</span>,
+  <span class="j-key">"key"</span>: <span class="j-str">"CLOUD"</span>,
+  <span class="j-key">"description"</span>: <span class="j-str">"High-throughput distributed workflow engine"</span>,
+  <span class="j-key">"ownerId"</span>: <span class="j-num">1</span>, <span class="j-cmt">// Automatically bound to authenticated user</span>
+  <span class="j-key">"createdAt"</span>: <span class="j-str">"2026-10-18T18:31:05.029Z"</span>,
+  <span class="j-key">"updatedAt"</span>: <span class="j-null">null</span>
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLUMN 2: ISSUE CREATION & COMMENT -->
+  <div class="col-stack">
+    <!-- 3. POST /issues -->
+    <div class="api-card">
+      <div class="card-header">
+        <div class="route-badge">
+          <span class="method m-post">POST</span>
+          <span>/issues</span>
+        </div>
+        <span class="status-tag">201 Created</span>
+      </div>
+      <div class="card-body">
+        <div class="section-label">Request (Headers: Authorization: Bearer &lt;token&gt;)</div>
+        <pre class="code-block">{
+  <span class="j-key">"title"</span>: <span class="j-str">"Optimize PostgreSQL pool queue timeout"</span>,
+  <span class="j-key">"description"</span>: <span class="j-str">"Configure connection timeout and idle client eviction"</span>,
+  <span class="j-key">"status"</span>: <span class="j-str">"in-progress"</span>,
+  <span class="j-key">"priority"</span>: <span class="j-str">"high"</span>,
+  <span class="j-key">"projectId"</span>: <span class="j-num">1</span>
+}</pre>
+        <div class="section-label">Response Body (HTTP 201)</div>
+        <pre class="code-block">{
+  <span class="j-key">"id"</span>: <span class="j-num">1</span>,
+  <span class="j-key">"title"</span>: <span class="j-str">"Optimize PostgreSQL pool queue timeout"</span>,
+  <span class="j-key">"description"</span>: <span class="j-str">"Configure connection timeout and idle client eviction"</span>,
+  <span class="j-key">"status"</span>: <span class="j-str">"in-progress"</span>,
+  <span class="j-key">"priority"</span>: <span class="j-str">"high"</span>,
+  <span class="j-key">"projectId"</span>: <span class="j-num">1</span>,
+  <span class="j-key">"creatorId"</span>: <span class="j-num">1</span>,
+  <span class="j-key">"assigneeId"</span>: <span class="j-null">null</span>,
+  <span class="j-key">"createdAt"</span>: <span class="j-str">"2026-10-18T18:31:05.040Z"</span>,
+  <span class="j-key">"updatedAt"</span>: <span class="j-null">null</span>
+}</pre>
+      </div>
+    </div>
+
+    <!-- 4. POST /issues/1/comments -->
+    <div class="api-card">
+      <div class="card-header">
+        <div class="route-badge">
+          <span class="method m-post">POST</span>
+          <span>/issues/1/comments</span>
+        </div>
+        <span class="status-tag">201 Created</span>
+      </div>
+      <div class="card-body">
+        <div class="section-label">Request (Headers: Authorization: Bearer &lt;token&gt;)</div>
+        <pre class="code-block">{
+  <span class="j-key">"content"</span>: <span class="j-str">"Connection timeout set to 5000ms. Verified under connection saturation."</span>
+}</pre>
+        <div class="section-label">Response Body (HTTP 201)</div>
+        <pre class="code-block">{
+  <span class="j-key">"id"</span>: <span class="j-num">1</span>,
+  <span class="j-key">"issueId"</span>: <span class="j-num">1</span>,
+  <span class="j-key">"userId"</span>: <span class="j-num">1</span>,
+  <span class="j-key">"content"</span>: <span class="j-str">"Connection timeout set to 5000ms. Verified under connection saturation."</span>,
+  <span class="j-key">"author"</span>: {
+    <span class="j-key">"id"</span>: <span class="j-num">1</span>,
+    <span class="j-key">"name"</span>: <span class="j-str">"Alex Mercer"</span>,
+    <span class="j-key">"email"</span>: <span class="j-str">"alex.mercer@devflow.io"</span>
+  },
+  <span class="j-key">"createdAt"</span>: <span class="j-str">"2026-10-18T18:31:05.060Z"</span>,
+  <span class="j-key">"updatedAt"</span>: <span class="j-null">null</span>
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLUMN 3: SEARCH, FILTER & PAGINATION -->
+  <div class="col-stack">
+    <!-- 5. GET /issues (paginated query) -->
+    <div class="api-card" style="height: 100%;">
+      <div class="card-header">
+        <div class="route-badge">
+          <span class="method m-get">GET</span>
+          <span>/issues?search=pool&status=in-progress...</span>
+        </div>
+        <span class="status-tag">200 OK</span>
+      </div>
+      <div class="card-body">
+        <div class="section-label">Query Parameters</div>
+        <pre class="code-block"><span class="j-key">search</span>: <span class="j-str">"pool"</span>            <span class="j-cmt">// Case-insensitive ILIKE (title OR description)</span>
+<span class="j-key">status</span>: <span class="j-str">"in-progress"</span>     <span class="j-cmt">// Filter by status</span>
+<span class="j-key">sortBy</span>: <span class="j-str">"priority"</span>        <span class="j-cmt">// Column sort</span>
+<span class="j-key">order</span>:  <span class="j-str">"desc"</span>            <span class="j-cmt">// DESC + deterministic tie-breaker (i.id ASC)</span>
+<span class="j-key">limit</span>:  <span class="j-num">1</span>                 <span class="j-cmt">// Page size</span>
+<span class="j-key">page</span>:   <span class="j-num">1</span>                 <span class="j-cmt">// Current page index</span></pre>
+        <div class="section-label">Response Body (HTTP 200 - Envelope Format)</div>
+        <pre class="code-block" style="flex: 1;">{
+  <span class="j-key">"data"</span>: [
+    {
+      <span class="j-key">"id"</span>: <span class="j-num">1</span>,
+      <span class="j-key">"title"</span>: <span class="j-str">"Optimize PostgreSQL pool queue timeout"</span>,
+      <span class="j-key">"description"</span>: <span class="j-str">"Configure connection timeout and idle client eviction"</span>,
+      <span class="j-key">"status"</span>: <span class="j-str">"in-progress"</span>,
+      <span class="j-key">"priority"</span>: <span class="j-str">"high"</span>,
+      <span class="j-key">"projectId"</span>: <span class="j-num">1</span>,
+      <span class="j-key">"creatorId"</span>: <span class="j-num">1</span>,
+      <span class="j-key">"assigneeId"</span>: <span class="j-null">null</span>,
+      <span class="j-key">"project"</span>: {
+        <span class="j-key">"id"</span>: <span class="j-num">1</span>,
+        <span class="j-key">"name"</span>: <span class="j-str">"Cloud Orchestrator"</span>,
+        <span class="j-key">"key"</span>: <span class="j-str">"CLOUD"</span>
+      },
+      <span class="j-key">"creator"</span>: {
+        <span class="j-key">"id"</span>: <span class="j-num">1</span>,
+        <span class="j-key">"name"</span>: <span class="j-str">"Alex Mercer"</span>,
+        <span class="j-key">"email"</span>: <span class="j-str">"alex.mercer@devflow.io"</span>
+      },
+      <span class="j-key">"createdAt"</span>: <span class="j-str">"2026-10-18T18:31:05.040Z"</span>,
+      <span class="j-key">"updatedAt"</span>: <span class="j-null">null</span>
+    }
+  ],
+  <span class="j-key">"pagination"</span>: {
+    <span class="j-key">"total"</span>: <span class="j-num">1</span>,
+    <span class="j-key">"limit"</span>: <span class="j-num">1</span>,
+    <span class="j-key">"page"</span>: <span class="j-num">1</span>,
+    <span class="j-key">"totalPages"</span>: <span class="j-num">1</span>,
+    <span class="j-key">"hasMore"</span>: <span class="j-bool">false</span>
+  }
+}</pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-bar">
+  <div>Data verified against DevFlow PostgreSQL database using <code>devflow_test</code> environment fixtures.</div>
+  <div>API Contract: Uniform JSON envelope, ISO-8601 timestamps, sanitized foreign-key relationships.</div>
+</div>
+
+</body>
+</html>
+

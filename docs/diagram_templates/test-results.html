@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0d14;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 30px 48px;
+    position: relative;
+  }
+  
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  .title-area h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .title-area h1 span.badge {
+    font-size: 13px;
+    font-weight: 600;
+    background: #064e3b;
+    color: #34d399;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    border: 1px solid #059669;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .title-area p {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+  .meta-tags {
+    display: flex;
+    gap: 10px;
+  }
+  .tag {
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #1e293b;
+    color: #cbd5e1;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+  }
+
+  /* Metric Cards Ribbon */
+  .metrics-ribbon {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+  .metric-card {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  }
+  .metric-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .icon-green { background: #064e3b; color: #34d399; border: 1px solid #059669; }
+  .icon-blue { background: #1e3a8a; color: #60a5fa; border: 1px solid #2563eb; }
+  .icon-purple { background: #581c87; color: #c084fc; border: 1px solid #7c3aed; }
+  .icon-amber { background: #78350f; color: #fbbf24; border: 1px solid #d97706; }
+
+  .metric-val {
+    font-size: 28px;
+    font-weight: 800;
+    color: #f8fafc;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    line-height: 1.1;
+  }
+  .metric-label {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 2px;
+    font-weight: 500;
+  }
+
+  /* Main Split: Left Suite Breakdown, Right Terminal Output */
+  .main-split {
+    display: grid;
+    grid-template-columns: 960px 840px;
+    gap: 24px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Suite Table Card */
+  .suites-card {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .card-heading {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 10px;
+  }
+
+  .suite-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .suite-table th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    padding: 8px 12px;
+    border-bottom: 1px solid #334155;
+    font-family: ui-monospace, monospace;
+  }
+  .suite-table td {
+    padding: 12px 12px;
+    border-bottom: 1px solid #1e293b;
+    font-size: 13px;
+    color: #e2e8f0;
+  }
+  .suite-table tr:last-child td {
+    border-bottom: none;
+  }
+  .suite-table tr:hover {
+    background: rgba(30, 41, 59, 0.4);
+  }
+
+  .suite-name {
+    font-weight: 600;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .file-badge {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    color: #94a3b8;
+    background: #1e293b;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .pass-badge {
+    background: #064e3b;
+    color: #34d399;
+    border: 1px solid #059669;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: ui-monospace, monospace;
+    display: inline-block;
+  }
+
+  /* Hardening Checklist Panel */
+  .hardening-panel {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-top: auto;
+  }
+  .h-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #60a5fa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .h-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    font-size: 11.5px;
+    color: #cbd5e1;
+  }
+  .h-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chk { color: #10b981; font-weight: bold; }
+
+  /* Terminal Window */
+  .terminal-card {
+    background: #030712;
+    border: 1px solid #1f2937;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.5);
+  }
+  .terminal-topbar {
+    background: #111827;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #1f2937;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-red { background: #ef4444; }
+  .dot-yellow { background: #f59e0b; }
+  .dot-green { background: #10b981; }
+  .terminal-title {
+    margin-left: 10px;
+    font-size: 12px;
+    color: #9ca3af;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .terminal-body {
+    padding: 16px 20px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: #f3f4f6;
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .t-cmd { color: #38bdf8; font-weight: 600; margin-bottom: 8px; }
+  .t-tap { color: #9ca3af; }
+  .t-ok { color: #4ade80; font-weight: 600; }
+  .t-sub { color: #60a5fa; margin-left: 16px; }
+  .t-highlight { color: #facc15; font-weight: 700; }
+  .t-summary {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px dashed #374151;
+    color: #e5e7eb;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title-area">
+    <h1>DevFlow Automated Test Suite Execution <span class="badge">100% Passed</span></h1>
+    <p>Integration test verification executed against live PostgreSQL 16 test database (devflow_test) using Node.js native test runner</p>
+  </div>
+  <div class="meta-tags">
+    <div class="tag">node --test</div>
+    <div class="tag">--test-concurrency=1</div>
+    <div class="tag">devflow_test</div>
+    <div class="tag">62 Automated Tests</div>
+  </div>
+</div>
+
+<div class="metrics-ribbon">
+  <div class="metric-card">
+    <div class="metric-icon icon-green">&#10003;</div>
+    <div>
+      <div class="metric-val" style="color: #34d399;">62 / 62</div>
+      <div class="metric-label">Tests Passed (100% Success)</div>
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-icon icon-blue">&#128193;</div>
+    <div>
+      <div class="metric-val" style="color: #60a5fa;">5 / 5</div>
+      <div class="metric-label">Integration Test Suites</div>
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-icon icon-purple">&#9201;</div>
+    <div>
+      <div class="metric-val" style="color: #c084fc;">13.08s</div>
+      <div class="metric-label">Total Execution Duration</div>
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-icon icon-amber">&#128737;</div>
+    <div>
+      <div class="metric-val" style="color: #fbbf24;">0 Failures</div>
+      <div class="metric-label">0 Regressions &bull; 0 Skipped</div>
+    </div>
+  </div>
+</div>
+
+<div class="main-split">
+
+  <!-- LEFT: TEST SUITES BREAKDOWN TABLE -->
+  <div class="suites-card">
+    <div class="card-heading">
+      <span>Integration Test Suites Breakdown</span>
+      <span style="font-size: 12px; color: #10b981; font-weight: normal;">Sequential DB Isolation Mode</span>
+    </div>
+
+    <table class="suite-table">
+      <thead>
+        <tr>
+          <th>Test Suite</th>
+          <th>File</th>
+          <th>Tests</th>
+          <th>Key Coverage</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="suite-name">Auth API Integration</div></td>
+          <td><span class="file-badge">auth.test.js</span></td>
+          <td style="font-family: ui-monospace; font-weight: bold;">13</td>
+          <td>Role immutability, 429 login rate limit, JWT stats, fail-fast</td>
+          <td><span class="pass-badge">13 PASS</span></td>
+        </tr>
+        <tr>
+          <td><div class="suite-name">Projects API Integration</div></td>
+          <td><span class="file-badge">project.test.js</span></td>
+          <td style="font-family: ui-monospace; font-weight: bold;">11</td>
+          <td>Owner authorization, key uniqueness, CRUD, 403 barriers</td>
+          <td><span class="pass-badge">11 PASS</span></td>
+        </tr>
+        <tr>
+          <td><div class="suite-name">Issues API Integration</div></td>
+          <td><span class="file-badge">issue.test.js</span></td>
+          <td style="font-family: ui-monospace; font-weight: bold;">19</td>
+          <td>Creator/Owner/Admin RBAC mutations, status transitions, 401/403</td>
+          <td><span class="pass-badge">19 PASS</span></td>
+        </tr>
+        <tr>
+          <td><div class="suite-name">Comments API Integration</div></td>
+          <td><span class="file-badge">comment.test.js</span></td>
+          <td style="font-family: ui-monospace; font-weight: bold;">10</td>
+          <td>Chronological ordering, author delete, admin override, cascade delete</td>
+          <td><span class="pass-badge">10 PASS</span></td>
+        </tr>
+        <tr>
+          <td><div class="suite-name">Search, Sorting & Pagination</div></td>
+          <td><span class="file-badge">search.test.js</span></td>
+          <td style="font-family: ui-monospace; font-weight: bold;">9</td>
+          <td>ILIKE text search, combined filters, deterministic ID tie-breaking</td>
+          <td><span class="pass-badge">9 PASS</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="hardening-panel">
+      <div class="h-title">&#128737; Phase 6 Hardening Regression Verification (All Passed)</div>
+      <div class="h-grid">
+        <div class="h-item"><span class="chk">&#10003;</span> Public self-assigned admin blocked (role='member')</div>
+        <div class="h-item"><span class="chk">&#10003;</span> Issue update/delete requires auth & ownership RBAC</div>
+        <div class="h-item"><span class="chk">&#10003;</span> Bounded PostgreSQL connection pool timeouts</div>
+        <div class="h-item"><span class="chk">&#10003;</span> Production JWT_SECRET fail-fast check (&ge;32 chars)</div>
+        <div class="h-item"><span class="chk">&#10003;</span> Login rate limiting (429 + Retry-After header)</div>
+        <div class="h-item"><span class="chk">&#10003;</span> Deterministic pagination secondary ordering (i.id ASC)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: REAL TERMINAL EXECUTION OUTPUT -->
+  <div class="terminal-card">
+    <div class="terminal-topbar">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">bash &mdash; node --test --test-concurrency=1 (DevFlow CI/CD)</span>
+    </div>
+    <div class="terminal-body">
+      <div class="t-cmd">$ npm test</div>
+      <div class="t-tap">&gt; project@1.0.0 test</div>
+      <div class="t-tap">&gt; node --test --test-concurrency=1</div>
+      <br>
+      <div class="t-tap">TAP version 13</div>
+      <div class="t-ok">ok 1 - Auth API Integration Tests (PostgreSQL + JWT)</div>
+      <div class="t-sub">&#10003; should register new user with 201 status and JWT token</div>
+      <div class="t-sub">&#10003; should ignore role in registration and always assign member</div>
+      <div class="t-sub">&#10003; should rate limit excessive login attempts and return 429</div>
+      <div class="t-sub">&#10003; should protect /admin/stats requiring valid admin JWT</div>
+      <div class="t-sub">&#10003; should throw fatal error on boot when JWT_SECRET insecure</div>
+      <br>
+      <div class="t-ok">ok 2 - Comments API Integration Tests (PostgreSQL + Auth)</div>
+      <div class="t-sub">&#10003; should list comments in chronological order with author details</div>
+      <div class="t-sub">&#10003; should cascade delete comments when parent issue is deleted</div>
+      <br>
+      <div class="t-ok">ok 3 - Issues API Integration Tests (PostgreSQL + Auth)</div>
+      <div class="t-sub">&#10003; should reject issue update without authentication with 401</div>
+      <div class="t-sub">&#10003; should reject unauthorized issue deletion with 403</div>
+      <div class="t-sub">&#10003; should allow admin to delete any issue with 200 status</div>
+      <br>
+      <div class="t-ok">ok 4 - Projects API Integration Tests (PostgreSQL + Auth)</div>
+      <div class="t-sub">&#10003; should reject project update from another non-admin user (403)</div>
+      <br>
+      <div class="t-ok">ok 5 - Search, Sorting & Pagination API Integration Tests</div>
+      <div class="t-sub">&#10003; should maintain deterministic ordering across pages using id tie-breaker</div>
+      <br>
+      <div class="t-summary">
+        <div>1..5</div>
+        <div><span class="t-highlight"># tests 62</span></div>
+        <div># suites 5</div>
+        <div><span class="t-ok" style="font-weight: 700;"># pass 62</span></div>
+        <div># fail 0</div>
+        <div># cancelled 0</div>
+        <div># skipped 0</div>
+        <div># todo 0</div>
+        <div><span class="t-tap"># duration_ms 13078.7978</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
+

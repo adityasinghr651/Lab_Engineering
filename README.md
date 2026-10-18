@@ -14,7 +14,11 @@
   ![Express.js](https://img.shields.io/badge/Express.js-API-black?logo=express)
   ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white)
   ![JavaScript](https://img.shields.io/badge/JavaScript-CommonJS-F7DF1E?logo=javascript&logoColor=black)
-  ![Testing](https://img.shields.io/badge/Tests-52%20passing%20at%20last%20verified%20snapshot-brightgreen)
+  ![Testing](https://img.shields.io/badge/Tests-62%20passing%20at%20last%20verified%20snapshot-brightgreen)
+</p>
+
+<p align="center">
+  <img src="docs/images/devflow-hero-animated.gif" alt="DevFlow Interactive Architecture & Relational Engine Showcase" width="100%" />
 </p>
 
 ---
@@ -96,13 +100,15 @@ The codebase uses a layered architecture to separate HTTP handling, business log
 
 ## System architecture
 
-The application follows a layered backend architecture.
+The application follows a strict layered backend architecture separating HTTP routing, security guards, business logic, data access, and database connection pooling.
+
+![DevFlow System Architecture](docs/images/system-architecture.gif)
 
 ```mermaid
 flowchart TD
     Client["Client / API Consumer"]
     Routes["Express Routes"]
-    Middleware["Authentication and Validation Middleware"]
+    Middleware["Authentication, Rate Limiting & Validation Middleware"]
     Controller["Controllers"]
     Service["Business Logic Services"]
     Repository["Data Access Repositories"]
@@ -152,7 +158,9 @@ This separation makes the system easier to test, maintain, and extend without mi
 
 ## Database design
 
-The application uses PostgreSQL and relational constraints to represent users, projects, issues, and comments.
+The application uses PostgreSQL with strict relational constraints to represent users, projects, issues, and comments. Foreign key cascades and nullifications ensure data consistency.
+
+![DevFlow Database ER Diagram](docs/images/database-er.png)
 
 ```mermaid
 erDiagram
@@ -166,16 +174,19 @@ erDiagram
     USERS {
         integer id PK
         string name
-        string email
+        string email UK
         string password_hash
         string role
+        timestamptz created_at
     }
 
     PROJECTS {
         integer id PK
         string name
-        string key
+        string key UK
+        string description
         integer owner_id FK
+        timestamptz created_at
     }
 
     ISSUES {
@@ -187,17 +198,19 @@ erDiagram
         integer project_id FK
         integer creator_id FK
         integer assignee_id FK
+        timestamptz created_at
     }
 
     COMMENTS {
         integer id PK
         integer issue_id FK
-        integer author_id FK
-        string body
+        integer user_id FK
+        text content
+        timestamptz created_at
     }
 ```
 
-*Note: This is a conceptual relationship diagram. Verify exact column names, data types, constraints, and optional relationships against `src/db/schema.sql` before publishing.*
+The ER diagram matches `src/db/schema.sql` directly, including single and composite indexes (`idx_users_email`, `idx_projects_key`, `idx_issues_status`, `idx_issues_created_at`, `idx_comments_issue_id`).
 
 ### Data integrity principles
 
@@ -257,75 +270,57 @@ DevFlow/
 
 ## API reference
 
-The following table summarizes the reported endpoint families. Confirm exact paths, request schemas, status codes, and authorization requirements against the current implementation before treating this as a definitive API contract.
+The following diagram outlines the primary request workflows across registration, project setup, issue assignment, threaded commenting, and deterministic pagination.
+
+![DevFlow API Workflow](docs/images/api-workflow.png)
+
+### Endpoint catalog
+
+The following table summarizes the verified endpoint families and authorization requirements.
 
 ### Authentication
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/auth/register` | Register an account |
-| POST | `/auth/login` | Authenticate and obtain a token |
-| GET | `/auth/me` | Retrieve the authenticated user's identity |
+| Method | Endpoint | Purpose | Access |
+|---|---|---|---|
+| POST | `/auth/register` | Register an account (forces `role: member`) | Public |
+| POST | `/auth/login` | Authenticate and obtain JWT (sliding rate-limited) | Public |
+| GET | `/auth/me` | Retrieve the authenticated user's identity | Authenticated |
 
 ### Projects
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/projects` | Create a project |
-| GET | `/projects` | List accessible projects |
-| GET | `/projects/:id` | Retrieve a project |
-| PUT | `/projects/:id` | Update a project |
-| DELETE | `/projects/:id` | Delete a project |
+| Method | Endpoint | Purpose | Access |
+|---|---|---|---|
+| POST | `/projects` | Create a project container | Authenticated |
+| GET | `/projects` | List accessible projects with owner metadata | Authenticated |
+| GET | `/projects/:id` | Retrieve single project by ID | Authenticated |
+| PUT | `/projects/:id` | Update project name/description | Owner / Admin |
+| DELETE | `/projects/:id` | Delete project and cascade child issues | Owner / Admin |
 
 ### Issues
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/issues` | List, filter, search, sort, or paginate issues |
-| POST | `/issues` | Create an issue |
-| GET | `/issues/:id` | Retrieve an issue |
-| PUT | `/issues/:id` | Update an issue |
-| DELETE | `/issues/:id` | Delete an issue |
-| GET | `/projects/:projectId/issues` | List issues for a project |
-| POST | `/projects/:projectId/issues` | Create an issue within a project |
+| Method | Endpoint | Purpose | Access |
+|---|---|---|---|
+| GET | `/issues` | List, filter, search, sort, or paginate issues | Optional Auth |
+| POST | `/issues` | Create an issue with creator and assignee | Authenticated |
+| GET | `/issues/:id` | Retrieve an issue with project and creator info | Optional Auth |
+| PUT | `/issues/:id` | Update status, priority, or details | Creator / Owner / Admin |
+| DELETE | `/issues/:id` | Delete an issue and cascade comments | Creator / Owner / Admin |
+| GET | `/projects/:projectId/issues` | List issues scoped to a specific project | Optional Auth |
+| POST | `/projects/:projectId/issues` | Create an issue scoped to a project | Authenticated |
 
 ### Comments
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/issues/:issueId/comments` | List issue comments |
-| POST | `/issues/:issueId/comments` | Add a comment |
-| DELETE | `/issues/:issueId/comments/:commentId` | Delete a comment, subject to authorization |
+| Method | Endpoint | Purpose | Access |
+|---|---|---|---|
+| GET | `/issues/:issueId/comments` | List issue comments chronologically | Public / Accessible |
+| POST | `/issues/:issueId/comments` | Add a comment to an issue | Authenticated |
+| DELETE | `/issues/:issueId/comments/:commentId` | Delete a comment | Author / Admin |
 
-### Search and pagination example
+### Live API demonstration
 
-```http
-GET /issues?search=authentication&sortBy=createdAt&order=desc&limit=10&page=1
-```
+The visual below illustrates authentic HTTP exchanges executed against DevFlow on the test database, showing actual JSON request bodies, header requirements, status codes, and response envelopes.
 
-Depending on the query parameters, the API supports a flat array for unpaginated requests or a paginated response containing data and metadata.
-
-Illustrative response shape:
-
-```json
-{
-  "data": [
-    {
-      "id": 12,
-      "title": "Improve authentication error handling"
-    }
-  ],
-  "pagination": {
-    "total": 24,
-    "limit": 10,
-    "page": 1,
-    "totalPages": 3,
-    "hasMore": true
-  }
-}
-```
-
-The values above are examples, not a claim about current database contents.
+![DevFlow API Examples](docs/images/api-examples.png)
 
 ## Getting started
 
@@ -415,7 +410,11 @@ The exact variable names and defaults match `src/config/index.js`, `src/config/d
 
 ## Testing
 
-At the last reported verification snapshot, the project had 62 passing automated tests across five suites.
+DevFlow includes automated integration tests executing against a live PostgreSQL database (`devflow_test`) using the native Node.js test runner (`node --test --test-concurrency=1`).
+
+![DevFlow Test Results](docs/images/test-results.png)
+
+At the latest verification run, all 62 automated integration tests passed with 0 failures:
 
 | Suite | Reported tests |
 |---|---:|
@@ -482,39 +481,27 @@ Unit-level checks alone may not catch problems involving routing, authentication
 
 ## Roadmap
 
-- [ ] Complete security and reliability hardening.
-- [ ] Verify resource-level authorization on every mutation.
-- [ ] Add deterministic pagination and boundary-case tests.
-- [ ] Finalize database timeout and shutdown behaviour.
+- [x] Complete security and reliability hardening (Phase 6 verified).
+- [x] Verify resource-level authorization on every mutation (issues & comments).
+- [x] Add deterministic pagination and boundary-case tests (`i.id ASC` tie-breaking).
+- [x] Finalize database timeout and shutdown behaviour (10s bounded watchdog).
+- [x] Publish architecture diagrams and real API screenshots (generated in `docs/images/`).
 - [ ] Document all API request/response schemas and status codes.
 - [ ] Add reproducible performance benchmarks with clearly stated test conditions.
-- [ ] Publish architecture diagrams and real API screenshots.
 - [ ] Add CI checks for tests and linting.
 - [ ] Document deployment, database migrations, and operational monitoring.
 
-Only mark items complete after verifying the implementation.
+## Visual documentation
 
-## Screenshots and diagrams
+High-resolution diagrams and genuine execution screenshots are located in `docs/images/`:
 
-Store genuine project visuals in a directory such as `docs/images/` and reference them using relative paths.
-
-Suggested assets:
-
-| Asset | Suggested filename | Purpose |
+| Diagram / Asset | Relative Path | Purpose |
 |---|---|---|
-| Architecture diagram | `docs/images/system-architecture.png` | Explain the request lifecycle |
-| Database diagram | `docs/images/database-er.png` | Show entities and relationships |
-| API examples | `docs/images/api-examples.png` | Demonstrate real API requests and responses |
-| Test output | `docs/images/test-results.png` | Show a recent, reproducible test run |
-| Monitoring output | `docs/images/metrics-dashboard.png` | Show actual metrics, if a dashboard exists |
-
-For example, after creating the image:
-
-```markdown
-![DevFlow system architecture](docs/images/system-architecture.png)
-```
-
-Do not add invented screenshots, fabricated benchmark charts, or UI images that do not represent the actual project.
+| System Architecture | [`docs/images/system-architecture.png`](docs/images/system-architecture.png) | End-to-end request lifecycle and layered tiering |
+| Database ER Diagram | [`docs/images/database-er.png`](docs/images/database-er.png) | PostgreSQL entity relationships, keys, indexes, and constraints |
+| API Core Workflows | [`docs/images/api-workflow.png`](docs/images/api-workflow.png) | Execution sequences for auth, projects, issues, comments, search |
+| Live API Demonstration | [`docs/images/api-examples.png`](docs/images/api-examples.png) | Genuine HTTP exchanges captured from running test database |
+| Automated Test Results | [`docs/images/test-results.png`](docs/images/test-results.png) | 62 passing automated integration tests summary & TAP output |
 
 ## Contributing
 

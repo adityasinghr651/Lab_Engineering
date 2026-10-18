@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0d14;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 32px 48px;
+    position: relative;
+  }
+  
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 18px;
+    margin-bottom: 20px;
+  }
+  .title-area h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .title-area h1 span.badge {
+    font-size: 13px;
+    font-weight: 600;
+    background: #064e3b;
+    color: #34d399;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    border: 1px solid #059669;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .title-area p {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+  .meta-tags {
+    display: flex;
+    gap: 10px;
+  }
+  .tag {
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #1e293b;
+    color: #cbd5e1;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+  }
+
+  /* Main Canvas Area */
+  .canvas {
+    flex: 1;
+    position: relative;
+    border: 1px solid #1e293b;
+    background: radial-gradient(circle at 50% 30%, #0f172a 0%, #0a0d14 100%);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  /* SVG Relationships Canvas */
+  svg.connectors {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Table Cards */
+  .table-card {
+    position: absolute;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+    z-index: 2;
+    overflow: hidden;
+  }
+
+  .table-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #3b82f6;
+  }
+  .table-header.emerald-top { border-bottom-color: #10b981; }
+  .table-header.purple-top { border-bottom-color: #8b5cf6; }
+  .table-header.amber-top { border-bottom-color: #f59e0b; }
+
+  .tbl-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .tbl-type {
+    font-size: 11px;
+    color: #94a3b8;
+    background: #0f172a;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid #334155;
+  }
+
+  /* Column Rows */
+  .tbl-body {
+    display: flex;
+    flex-direction: column;
+  }
+  .col-row {
+    display: grid;
+    grid-template-columns: 34px 1fr 100px;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    border-bottom: 1px solid #1e293b;
+    align-items: center;
+  }
+  .col-row:last-child {
+    border-bottom: none;
+  }
+  .col-row:nth-child(even) {
+    background: rgba(30, 41, 59, 0.25);
+  }
+
+  .key-badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    text-align: center;
+    font-family: ui-monospace, monospace;
+    width: 26px;
+    display: inline-block;
+  }
+  .key-pk { background: #78350f; color: #fef08a; border: 1px solid #d97706; }
+  .key-fk { background: #1e3a8a; color: #bfdbfe; border: 1px solid #3b82f6; }
+  .key-uq { background: #4c1d95; color: #ddd6fe; border: 1px solid #8b5cf6; }
+  .key-none { color: #475569; font-weight: normal; }
+
+  .col-name {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 600;
+    color: #e2e8f0;
+  }
+  .col-type {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10.5px;
+    color: #94a3b8;
+    text-align: right;
+  }
+  .col-meta {
+    grid-column: 2 / -1;
+    font-size: 9.5px;
+    color: #64748b;
+    font-family: ui-monospace, monospace;
+    padding-top: 1px;
+  }
+
+  /* Exact Card Positions (Total canvas ~1824 wide) */
+  #card-users {
+    top: 40px;
+    left: 40px;
+    width: 370px;
+  }
+  #card-projects {
+    top: 40px;
+    left: 470px;
+    width: 380px;
+  }
+  #card-issues {
+    top: 40px;
+    left: 910px;
+    width: 440px;
+  }
+  #card-comments {
+    top: 40px;
+    left: 1410px;
+    width: 370px;
+  }
+
+  /* Bottom Legend & Metrics Bar */
+  .legend-bar {
+    margin-top: 14px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .legend-items {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #cbd5e1;
+  }
+  .legend-line {
+    width: 24px;
+    height: 3px;
+    border-radius: 2px;
+  }
+  .line-blue { background: #3b82f6; }
+  .line-emerald { background: #10b981; }
+  .line-purple { background: #8b5cf6; }
+  .line-amber { background: #f59e0b; }
+  .line-cyan { background: #06b6d4; }
+  .line-pink { background: #ec4899; }
+
+  .relationship-tag {
+    font-size: 11.5px;
+    font-family: ui-monospace, monospace;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title-area">
+    <h1>DevFlow Database Entity-Relationship Diagram <span class="badge">PostgreSQL 16 Schema</span></h1>
+    <p>Complete relational schema from <code>src/db/schema.sql</code> with primary keys, foreign key constraints, indexes, and cascades</p>
+  </div>
+  <div class="meta-tags">
+    <div class="tag">4 Entities</div>
+    <div class="tag">6 Relationships</div>
+    <div class="tag">ON DELETE CASCADE / SET NULL</div>
+    <div class="tag">SERIAL PKs</div>
+    <div class="tag">PostgreSQL Dialect</div>
+  </div>
+</div>
+
+<div class="canvas">
+  <svg class="connectors">
+    <defs>
+      <!-- Arrow Markers -->
+      <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 8 5 L 0 9 z" fill="#3b82f6"/>
+      </marker>
+      <marker id="arrow-emerald" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 8 5 L 0 9 z" fill="#10b981"/>
+      </marker>
+      <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 8 5 L 0 9 z" fill="#8b5cf6"/>
+      </marker>
+      <marker id="arrow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 8 5 L 0 9 z" fill="#f59e0b"/>
+      </marker>
+      <marker id="arrow-cyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 8 5 L 0 9 z" fill="#06b6d4"/>
+      </marker>
+      <marker id="arrow-pink" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 8 5 L 0 9 z" fill="#ec4899"/>
+      </marker>
+    </defs>
+
+    <!-- 1. users -> projects (projects.owner_id -> users.id) -->
+    <!-- users right: (410, 80) -> projects left: (470, 205) -->
+    <path d="M 410 80 C 440 80, 440 205, 468 205" fill="none" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+    <rect x="412" y="130" width="56" height="20" rx="4" fill="#0f172a" stroke="#1e3a8a"/>
+    <text x="440" y="144" fill="#93c5fd" font-size="9" font-family="ui-monospace" text-anchor="middle">1 &rarr; N</text>
+
+    <!-- 2. projects -> issues (issues.project_id -> projects.id) -->
+    <!-- projects right: (850, 80) -> issues left: (910, 245) -->
+    <path d="M 850 80 C 880 80, 880 245, 908 245" fill="none" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <rect x="852" y="150" width="56" height="20" rx="4" fill="#0f172a" stroke="#064e3b"/>
+    <text x="880" y="164" fill="#6ee7b7" font-size="9" font-family="ui-monospace" text-anchor="middle">1 &rarr; N</text>
+
+    <!-- 3. issues -> comments (comments.issue_id -> issues.id) -->
+    <!-- issues right: (1350, 80) -> comments left: (1410, 115) -->
+    <path d="M 1350 80 C 1380 80, 1380 115, 1408 115" fill="none" stroke="#8b5cf6" stroke-width="2.5" marker-end="url(#arrow-purple)"/>
+    <rect x="1352" y="85" width="56" height="20" rx="4" fill="#0f172a" stroke="#581c87"/>
+    <text x="1380" y="99" fill="#d8b4fe" font-size="9" font-family="ui-monospace" text-anchor="middle">1 &rarr; N</text>
+
+    <!-- 4. users -> issues (creator_id -> users.id) - bottom curve -->
+    <path d="M 220 400 C 220 540, 990 540, 990 325" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrow-amber)"/>
+    <rect x="520" y="528" width="220" height="22" rx="4" fill="#0f172a" stroke="#78350f"/>
+    <text x="630" y="543" fill="#fde68a" font-size="10" font-family="ui-monospace" text-anchor="middle">creator_id &rarr; users.id (ON DELETE SET NULL)</text>
+
+    <!-- 5. users -> issues (assignee_id -> users.id) - lower curve -->
+    <path d="M 260 400 C 260 610, 1070 610, 1070 380" fill="none" stroke="#06b6d4" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrow-cyan)"/>
+    <rect x="560" y="598" width="230" height="22" rx="4" fill="#0f172a" stroke="#164e63"/>
+    <text x="675" y="613" fill="#67e8f9" font-size="10" font-family="ui-monospace" text-anchor="middle">assignee_id &rarr; users.id (ON DELETE SET NULL)</text>
+
+    <!-- 6. users -> comments (user_id -> users.id) - broad sweep -->
+    <path d="M 170 400 C 170 680, 1500 680, 1500 200" fill="none" stroke="#ec4899" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrow-pink)"/>
+    <rect x="740" y="668" width="240" height="22" rx="4" fill="#0f172a" stroke="#831843"/>
+    <text x="860" y="683" fill="#fbcfe8" font-size="10" font-family="ui-monospace" text-anchor="middle">comments.user_id &rarr; users.id (CASCADE)</text>
+  </svg>
+
+  <!-- TABLE: USERS -->
+  <div class="table-card" id="card-users">
+    <div class="table-header">
+      <div class="tbl-name"><span>👤</span> users</div>
+      <div class="tbl-type">TABLE</div>
+    </div>
+    <div class="tbl-body">
+      <div class="col-row">
+        <div><span class="key-badge key-pk">PK</span></div>
+        <div class="col-name">id</div>
+        <div class="col-type">SERIAL</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">name</div>
+        <div class="col-type">VARCHAR(100)</div>
+        <div class="col-meta">NOT NULL | CHECK (char_length &ge; 2)</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-uq">UQ</span></div>
+        <div class="col-name">email</div>
+        <div class="col-type">VARCHAR(255)</div>
+        <div class="col-meta">NOT NULL | UNIQUE | INDEX idx_users_email</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">password_hash</div>
+        <div class="col-type">VARCHAR(255)</div>
+        <div class="col-meta">NOT NULL | bcrypt hash (10 rounds)</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">role</div>
+        <div class="col-type">VARCHAR(50)</div>
+        <div class="col-meta">NOT NULL | DEFAULT 'member' | CHECK ('admin', 'member')</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">created_at</div>
+        <div class="col-type">TIMESTAMPTZ</div>
+        <div class="col-meta">NOT NULL | DEFAULT CURRENT_TIMESTAMP</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">updated_at</div>
+        <div class="col-type">TIMESTAMPTZ</div>
+        <div class="col-meta">NULLABLE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE: PROJECTS -->
+  <div class="table-card" id="card-projects">
+    <div class="table-header emerald-top">
+      <div class="tbl-name"><span>📁</span> projects</div>
+      <div class="tbl-type">TABLE</div>
+    </div>
+    <div class="tbl-body">
+      <div class="col-row">
+        <div><span class="key-badge key-pk">PK</span></div>
+        <div class="col-name">id</div>
+        <div class="col-type">SERIAL</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">name</div>
+        <div class="col-type">VARCHAR(100)</div>
+        <div class="col-meta">NOT NULL | CHECK (char_length &ge; 2)</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-uq">UQ</span></div>
+        <div class="col-name">key</div>
+        <div class="col-type">VARCHAR(10)</div>
+        <div class="col-meta">NOT NULL | UNIQUE | INDEX idx_projects_key</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">description</div>
+        <div class="col-type">TEXT</div>
+        <div class="col-meta">NOT NULL | DEFAULT ''</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-fk">FK</span></div>
+        <div class="col-name">owner_id</div>
+        <div class="col-type">INTEGER</div>
+        <div class="col-meta">NOT NULL | REFERENCES users(id) ON DELETE CASCADE</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">created_at</div>
+        <div class="col-type">TIMESTAMPTZ</div>
+        <div class="col-meta">NOT NULL | DEFAULT CURRENT_TIMESTAMP</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">updated_at</div>
+        <div class="col-type">TIMESTAMPTZ</div>
+        <div class="col-meta">NULLABLE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE: ISSUES -->
+  <div class="table-card" id="card-issues">
+    <div class="table-header amber-top">
+      <div class="tbl-name"><span>🐛</span> issues</div>
+      <div class="tbl-type">TABLE</div>
+    </div>
+    <div class="tbl-body">
+      <div class="col-row">
+        <div><span class="key-badge key-pk">PK</span></div>
+        <div class="col-name">id</div>
+        <div class="col-type">SERIAL</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">title</div>
+        <div class="col-type">VARCHAR(255)</div>
+        <div class="col-meta">NOT NULL | CHECK (char_length &ge; 5)</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">description</div>
+        <div class="col-type">TEXT</div>
+        <div class="col-meta">NOT NULL | DEFAULT ''</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">status</div>
+        <div class="col-type">VARCHAR(50)</div>
+        <div class="col-meta">NOT NULL | DEFAULT 'open' | CHECK ('open', 'in-progress', 'closed')</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">priority</div>
+        <div class="col-type">VARCHAR(50)</div>
+        <div class="col-meta">NOT NULL | DEFAULT 'medium' | CHECK ('low', 'medium', 'high')</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-fk">FK</span></div>
+        <div class="col-name">project_id</div>
+        <div class="col-type">INTEGER</div>
+        <div class="col-meta">REFERENCES projects(id) ON DELETE CASCADE | idx_issues_project_id</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-fk">FK</span></div>
+        <div class="col-name">creator_id</div>
+        <div class="col-type">INTEGER</div>
+        <div class="col-meta">REFERENCES users(id) ON DELETE SET NULL | idx_issues_creator_id</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-fk">FK</span></div>
+        <div class="col-name">assignee_id</div>
+        <div class="col-type">INTEGER</div>
+        <div class="col-meta">REFERENCES users(id) ON DELETE SET NULL | idx_issues_assignee_id</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">created_at</div>
+        <div class="col-type">TIMESTAMPTZ</div>
+        <div class="col-meta">NOT NULL | DEFAULT CURRENT_TIMESTAMP | INDEX idx_issues_created_at DESC</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">updated_at</div>
+        <div class="col-type">TIMESTAMPTZ</div>
+        <div class="col-meta">NULLABLE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE: COMMENTS -->
+  <div class="table-card" id="card-comments">
+    <div class="table-header purple-top">
+      <div class="tbl-name"><span>💬</span> comments</div>
+      <div class="tbl-type">TABLE</div>
+    </div>
+    <div class="tbl-body">
+      <div class="col-row">
+        <div><span class="key-badge key-pk">PK</span></div>
+        <div class="col-name">id</div>
+        <div class="col-type">SERIAL</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-fk">FK</span></div>
+        <div class="col-name">issue_id</div>
+        <div class="col-type">INTEGER</div>
+        <div class="col-meta">NOT NULL | REFERENCES issues(id) ON DELETE CASCADE</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-fk">FK</span></div>
+        <div class="col-name">user_id</div>
+        <div class="col-type">INTEGER</div>
+        <div class="col-meta">NOT NULL | REFERENCES users(id) ON DELETE CASCADE</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">content</div>
+        <div class="col-type">TEXT</div>
+        <div class="col-meta">NOT NULL | CHECK (char_length(trim(content)) &ge; 1)</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">created_at</div>
+        <div class="col-type">TIMESTAMPTZ</div>
+        <div class="col-meta">NOT NULL | DEFAULT CURRENT_TIMESTAMP</div>
+      </div>
+      <div class="col-row">
+        <div><span class="key-badge key-none">&bull;</span></div>
+        <div class="col-name">updated_at</div>
+        <div class="col-type">TIMESTAMPTZ</div>
+        <div class="col-meta">NULLABLE</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend-bar">
+  <div class="legend-items">
+    <div class="legend-item"><span class="key-badge key-pk">PK</span> Primary Key (SERIAL)</div>
+    <div class="legend-item"><span class="key-badge key-fk">FK</span> Foreign Key (Indexed)</div>
+    <div class="legend-item"><span class="key-badge key-uq">UQ</span> Unique Key</div>
+    <div class="legend-item"><div class="legend-line line-blue"></div> Owner Relation (CASCADE)</div>
+    <div class="legend-item"><div class="legend-line line-amber"></div> Creator Relation (SET NULL)</div>
+    <div class="legend-item"><div class="legend-line line-cyan"></div> Assignee Relation (SET NULL)</div>
+    <div class="legend-item"><div class="legend-line line-pink"></div> Comment Author (CASCADE)</div>
+  </div>
+  <div class="relationship-tag">
+    Database: PostgreSQL 16 &bull; Strict Referential Integrity &bull; 8 Single & Composite Indexes
+  </div>
+</div>
+
+</body>
+</html>
+
