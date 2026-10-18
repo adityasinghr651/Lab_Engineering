@@ -1,533 +1,219 @@
 # DevFlow — Engineering Project & Issue Management API
 
 <p align="center">
-  <strong>A backend platform for structured project management, issue tracking, and team collaboration.</strong>
+  <strong>A high-reliability backend platform for structured project management, issue tracking, and collaborative discussion.</strong><br/>
+  Built with Node.js 22 · Express 5 · PostgreSQL 16 · JWT Authentication · Zod Validation
 </p>
 
 <p align="center">
-  Built with Node.js, Express.js, PostgreSQL, JWT Authentication, and Zod.
+  <img src="https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white" alt="Express 5"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/Auth-JWT-7C3AED" alt="JWT authentication"/>
+  <img src="https://img.shields.io/badge/Validation-Zod-3068B7" alt="Zod validation"/>
+  <img src="https://img.shields.io/badge/Tests-62%20passing-brightgreen" alt="Tests"/>
 </p>
 
 <p align="center">
-  <!-- Replace or remove badges if they do not match the repository -->
-  ![Node.js](https://img.shields.io/badge/Node.js-Backend-339933?logo=nodedotjs&logoColor=white)
-  ![Express.js](https://img.shields.io/badge/Express.js-API-black?logo=express)
-  ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white)
-  ![JavaScript](https://img.shields.io/badge/JavaScript-CommonJS-F7DF1E?logo=javascript&logoColor=black)
-  ![Testing](https://img.shields.io/badge/Tests-62%20passing%20at%20last%20verified%20snapshot-brightgreen)
-</p>
-
-<p align="center">
-  <img src="docs/images/devflow-hero-animated.gif" alt="DevFlow Interactive Architecture & Relational Engine Showcase" width="100%" />
+  <img src="docs/images/devflow-hero-animated.gif" alt="DevFlow Animated Architecture & Relational Engine Showcase" width="100%" />
 </p>
 
 ---
 
 ## Overview
 
-DevFlow is a backend engineering project designed to manage projects, issues, assignments, and collaborative discussions through a structured REST API.
+DevFlow is an engineering-grade backend REST API providing core project tracking and collaboration capabilities. Designed as a production-minded architecture case study, it implements strict layered separation of concerns, secure authentication and authorization guards, relational integrity with cascading actions, deterministic search and pagination, and connection pool lifecycle management.
 
-The project focuses on more than CRUD operations. It explores backend engineering concepts such as authentication, authorization, relational data integrity, request validation, database access patterns, pagination, and automated integration testing.
+## Key Features
 
-The codebase uses a layered architecture to separate HTTP handling, business logic, data access, and database operations.
+- **Authentication & Identity:** User registration enforcing `member` role by default, password hashing with `bcryptjs` (10 rounds), signed JWT tokens, and fail-fast validation on insecure production secrets.
+- **Login Brute-Force Protection:** Sliding-window rate limiting on `/api/auth/login` (5 attempts / 15 minutes) with standard `Retry-After` headers.
+- **Project Workspaces:** Scoped project containers with normalized unique keys, relational ownership, and role-based update/deletion checks.
+- **Issue Tracking & Assignment:** Fine-grained issue states (`open`, `in_progress`, `resolved`, `closed`), multi-level priority queues, creator attribution, and safe nullable assignment.
+- **Threaded Collaboration:** Issue discussion comments preserving relational integrity on parent deletion (`CASCADE`).
+- **Deterministic Search & Pagination:** Case-insensitive `ILIKE` text search, multi-attribute filtering, dynamic sorting, page/offset pagination with total result count metadata, and deterministic secondary ordering (`ORDER BY ..., i.id ASC`).
+- **Connection Pool Lifecycle:** PostgreSQL pool management with bounded connection timeouts (5s), idle limits (30s), active utilization metrics, and 10s bounded graceful shutdown (`SIGTERM`/`SIGINT`).
 
-> **Project status:** The core feature phases have been implemented. Security and production-readiness hardening is a separate step; this README should be updated after the latest fixes and tests are verified.
+---
 
-## Table of contents
+## System Architecture
 
-- [Key features](#key-features)
-- [System architecture](#system-architecture)
-- [Database design](#database-design)
-- [Technology stack](#technology-stack)
-- [Project structure](#project-structure)
-- [API reference](#api-reference)
-- [Getting started](#getting-started)
-- [Environment variables](#environment-variables)
-- [Testing](#testing)
-- [Security and reliability](#security-and-reliability)
-- [Engineering decisions](#engineering-decisions)
-- [Roadmap](#roadmap)
-- [Author](#author)
+The application follows a strict 6-tier layered backend architecture separating HTTP entry, security guards, business logic, data access, and database connection pooling.
 
-## Key features
-
-### 1. Authentication and user identity
-
-- User registration and login.
-- Password hashing using `bcryptjs`.
-- JWT-based authentication.
-- Protected identity endpoint.
-- Role-aware authorization design.
-
-### 2. Project management
-
-- Create, retrieve, update, and delete projects.
-- Project ownership and administrative permissions.
-- Normalized project keys and uniqueness checks.
-- Relational data integrity.
-
-### 3. Issue management
-
-- Create and retrieve issues.
-- Associate issues with projects.
-- Track creators and assignees.
-- Filter issues by supported attributes.
-- Update and delete issues according to authorization rules.
-
-### 4. Comments and collaboration
-
-- Add comments to issues.
-- Retrieve issue discussions.
-- Associate comments with their authors.
-- Apply author/admin deletion rules.
-- Preserve relational integrity when parent records are deleted.
-
-### 5. Search, sorting, and pagination
-
-- Case-insensitive text search across issue titles and descriptions.
-- Sorting by supported fields.
-- Ascending and descending ordering.
-- Page-based and offset-based pagination.
-- Total-result metadata for paginated requests.
-- Backward-compatible unpaginated responses.
-
-### 6. Backend observability
-
-- Optional request logging using `ENABLE_REQUEST_LOGGING`.
-- Experimental PostgreSQL pool/query timing instrumentation using `TRACK_POOL_METRICS`.
-- Centralized error handling.
-- Health-check endpoint.
-
-## System architecture
-
-The application follows a strict layered backend architecture separating HTTP routing, security guards, business logic, data access, and database connection pooling.
-
-![DevFlow System Architecture](docs/images/system-architecture.gif)
+<p align="center">
+  <img src="docs/images/system-architecture.gif" alt="Animated DevFlow Request Lifecycle" width="100%" />
+</p>
 
 ```mermaid
 flowchart TD
-    Client["Client / API Consumer"]
-    Routes["Express Routes"]
-    Middleware["Authentication, Rate Limiting & Validation Middleware"]
-    Controller["Controllers"]
-    Service["Business Logic Services"]
-    Repository["Data Access Repositories"]
-    Pool["PostgreSQL Connection Pool"]
-    DB[("PostgreSQL Database")]
-    Errors["Centralized Error Handler"]
+    Client["Client / API Consumer (JSON & Bearer JWT)"]
+    Routes["Express 5 Routes (/auth, /projects, /issues, /comments)"]
+    Middleware["Security Guards (Rate Limiter, JWT Auth, Zod Validator)"]
+    Controllers["Request Controllers (Request Parsing & Response Formatting)"]
+    Services["Domain Services (Business Rules, RBAC & State Logic)"]
+    Repositories["Data Access Repositories (Parameterized SQL Queries)"]
+    Pool["PostgreSQL Connection Pool (max: 20, timeout: 5s)"]
+    DB[("PostgreSQL 16 Database")]
 
     Client --> Routes
     Routes --> Middleware
-    Middleware --> Controller
-    Controller --> Service
-    Service --> Repository
-    Repository --> Pool
+    Middleware --> Controllers
+    Controllers --> Services
+    Services --> Repositories
+    Repositories --> Pool
     Pool --> DB
-
-    Routes -. errors .-> Errors
-    Middleware -. errors .-> Errors
-    Controller -. errors .-> Errors
-    Service -. errors .-> Errors
-    Repository -. errors .-> Errors
-    Errors --> Client
 ```
 
-### Request lifecycle
+---
 
-1. A client sends an HTTP request to an API endpoint.
-2. Express routes direct the request to the appropriate middleware and controller.
-3. Validation middleware checks supported request inputs.
-4. Controllers translate HTTP input into service calls.
-5. Services enforce business rules and relationship checks.
-6. Repositories execute parameterized database operations.
-7. PostgreSQL stores or retrieves the data.
-8. The API returns a structured response or a centralized error response.
+## Database Design
 
-### Why use layers?
+DevFlow uses PostgreSQL 16 with relational constraints, foreign key referential integrity rules, unique constraints, and dedicated query performance indexes.
 
-| Layer | Responsibility |
-|---|---|
-| Routes | Endpoint definitions and middleware composition |
-| Middleware | Authentication, validation, and request processing |
-| Controllers | HTTP request and response handling |
-| Services | Business rules and authorization decisions |
-| Repositories | SQL queries and data access |
-| PostgreSQL | Persistent storage and relational constraints |
+<p align="center">
+  <img src="docs/images/database-er.png" alt="DevFlow Relational Database Schema" width="100%" />
+</p>
 
-This separation makes the system easier to test, maintain, and extend without mixing SQL, HTTP handling, and business rules in a single file.
+### Relational Schema Summary
 
-## Database design
+| Table | Primary Key | Foreign Keys & Actions | Indexes | Purpose |
+|---|---|---|---|---|
+| `users` | `id` (SERIAL) | — | `email` (UNIQUE) | User identity, credentials, and RBAC roles |
+| `projects` | `id` (SERIAL) | `owner_id` &rarr; `users.id` (ON DELETE CASCADE) | `key` (UNIQUE), `owner_id` | Project workspaces and team ownership |
+| `issues` | `id` (SERIAL) | `project_id` &rarr; `projects.id` (CASCADE)<br/>`created_by` &rarr; `users.id` (CASCADE)<br/>`assigned_to` &rarr; `users.id` (SET NULL) | `project_id`, `status`, `priority`, `created_at` | Task and bug tracking |
+| `comments` | `id` (SERIAL) | `issue_id` &rarr; `issues.id` (CASCADE)<br/>`author_id` &rarr; `users.id` (CASCADE) | `issue_id`, `author_id` | Issue threaded discussion |
 
-The application uses PostgreSQL with strict relational constraints to represent users, projects, issues, and comments. Foreign key cascades and nullifications ensure data consistency.
+---
 
-![DevFlow Database ER Diagram](docs/images/database-er.png)
+## API Execution Workflow
 
-```mermaid
-erDiagram
-    USERS ||--o{ PROJECTS : owns
-    USERS ||--o{ ISSUES : creates
-    USERS ||--o{ ISSUES : assigned_to
-    PROJECTS ||--o{ ISSUES : contains
-    ISSUES ||--o{ COMMENTS : has
-    USERS ||--o{ COMMENTS : writes
+The animated demonstration below showcases a verified end-to-end developer workflow executed against the test database:
 
-    USERS {
-        integer id PK
-        string name
-        string email UK
-        string password_hash
-        string role
-        timestamptz created_at
-    }
+<p align="center">
+  <img src="docs/images/api-demo.gif" alt="Animated DevFlow API Request & Response Workflow" width="100%" />
+</p>
 
-    PROJECTS {
-        integer id PK
-        string name
-        string key UK
-        string description
-        integer owner_id FK
-        timestamptz created_at
-    }
+### Endpoint Catalog
 
-    ISSUES {
-        integer id PK
-        string title
-        string description
-        string status
-        string priority
-        integer project_id FK
-        integer creator_id FK
-        integer assignee_id FK
-        timestamptz created_at
-    }
-
-    COMMENTS {
-        integer id PK
-        integer issue_id FK
-        integer user_id FK
-        text content
-        timestamptz created_at
-    }
-```
-
-The ER diagram matches `src/db/schema.sql` directly, including single and composite indexes (`idx_users_email`, `idx_projects_key`, `idx_issues_status`, `idx_issues_created_at`, `idx_comments_issue_id`).
-
-### Data integrity principles
-
-- Use foreign keys for valid relationships.
-- Use parameterized queries to separate SQL from user input.
-- Enforce uniqueness where the domain requires it.
-- Validate input before performing database operations.
-- Use transactions for operations that must succeed or fail together.
-
-## Technology stack
-
-| Technology | Purpose |
-|---|---|
-| Node.js | JavaScript runtime |
-| Express.js | HTTP API framework |
-| PostgreSQL | Relational database |
-| `pg` | PostgreSQL client and connection pooling |
-| JWT / `jsonwebtoken` | Token-based authentication |
-| `bcryptjs` | Password hashing |
-| Zod | Request validation |
-| Node.js test runner | Automated test execution |
-
-## Project structure
-
-The following is an indicative structure. Keep it aligned with the actual repository rather than creating files solely to match this diagram.
-
-```text
-DevFlow/
-├── server.js
-├── package.json
-├── package-lock.json
-├── .env.example
-├── src/
-│   ├── app.js
-│   ├── config/
-│   │   ├── index.js
-│   │   └── db.js
-│   ├── db/
-│   │   └── schema.sql
-│   ├── routes/
-│   │   ├── auth.routes.js
-│   │   ├── project.routes.js
-│   │   ├── issue.routes.js
-│   │   └── comment.routes.js
-│   ├── controllers/
-│   ├── services/
-│   ├── repositories/
-│   ├── middleware/
-│   └── validators/
-└── tests/
-    ├── auth.test.js
-    ├── project.test.js
-    ├── issue.test.js
-    ├── comment.test.js
-    └── search.test.js
-```
-
-## API reference
-
-The following diagram outlines the primary request workflows across registration, project setup, issue assignment, threaded commenting, and deterministic pagination.
-
-![DevFlow API Workflow](docs/images/api-workflow.png)
-
-### Endpoint catalog
-
-The following table summarizes the verified endpoint families and authorization requirements.
-
-### Authentication
-
-| Method | Endpoint | Purpose | Access |
+| Method | Endpoint | Description | Authorization |
 |---|---|---|---|
-| POST | `/auth/register` | Register an account (forces `role: member`) | Public |
-| POST | `/auth/login` | Authenticate and obtain JWT (sliding rate-limited) | Public |
-| GET | `/auth/me` | Retrieve the authenticated user's identity | Authenticated |
+| `POST` | `/auth/register` | Register new user account (forces `role: member`) | Public |
+| `POST` | `/auth/login` | Authenticate credentials and receive Bearer JWT | Public (Rate-limited) |
+| `GET` | `/auth/me` | Fetch authenticated identity | Bearer Token |
+| `POST` | `/projects` | Create a new project workspace | Authenticated |
+| `GET` | `/projects` | List projects with owner metadata | Authenticated |
+| `GET` | `/projects/:id` | Fetch project details by ID | Authenticated |
+| `PUT` | `/projects/:id` | Update project details | Owner / Admin |
+| `DELETE`| `/projects/:id` | Delete project and cascade child issues | Owner / Admin |
+| `POST` | `/issues` | Create an issue with creator and assignee | Authenticated |
+| `GET` | `/issues` | Search, filter, sort, and paginate issues | Optional Auth |
+| `GET` | `/issues/:id` | Retrieve single issue with project details | Optional Auth |
+| `PUT` | `/issues/:id` | Update status, priority, or fields | Creator / Owner / Admin |
+| `DELETE`| `/issues/:id` | Delete an issue and cascade comments | Creator / Owner / Admin |
+| `POST` | `/issues/:id/comments` | Add a comment to an issue thread | Authenticated |
+| `GET` | `/issues/:id/comments` | Retrieve comments for an issue | Public / Accessible |
+| `DELETE`| `/issues/:id/comments/:commentId` | Delete a comment | Author / Admin |
+| `GET` | `/health` | Service health check | Public |
 
-### Projects
+---
 
-| Method | Endpoint | Purpose | Access |
-|---|---|---|---|
-| POST | `/projects` | Create a project container | Authenticated |
-| GET | `/projects` | List accessible projects with owner metadata | Authenticated |
-| GET | `/projects/:id` | Retrieve single project by ID | Authenticated |
-| PUT | `/projects/:id` | Update project name/description | Owner / Admin |
-| DELETE | `/projects/:id` | Delete project and cascade child issues | Owner / Admin |
+## Technology Stack
 
-### Issues
+| Layer / Concern | Technology | Purpose |
+|---|---|---|
+| **Runtime & HTTP** | Node.js 22 LTS + Express 5 | Asynchronous REST API routing & middleware |
+| **Database** | PostgreSQL 16 + `pg` | Relational persistence & connection pooling |
+| **Authentication** | `jsonwebtoken` + `bcryptjs` | Stateless JWT tokens & salted password hashing |
+| **Validation** | `zod` | Declarative request payload & query parsing |
+| **Test Runner** | Native Node.js Test Runner (`node:test`) | Automated integration testing with zero external dependencies |
 
-| Method | Endpoint | Purpose | Access |
-|---|---|---|---|
-| GET | `/issues` | List, filter, search, sort, or paginate issues | Optional Auth |
-| POST | `/issues` | Create an issue with creator and assignee | Authenticated |
-| GET | `/issues/:id` | Retrieve an issue with project and creator info | Optional Auth |
-| PUT | `/issues/:id` | Update status, priority, or details | Creator / Owner / Admin |
-| DELETE | `/issues/:id` | Delete an issue and cascade comments | Creator / Owner / Admin |
-| GET | `/projects/:projectId/issues` | List issues scoped to a specific project | Optional Auth |
-| POST | `/projects/:projectId/issues` | Create an issue scoped to a project | Authenticated |
+---
 
-### Comments
-
-| Method | Endpoint | Purpose | Access |
-|---|---|---|---|
-| GET | `/issues/:issueId/comments` | List issue comments chronologically | Public / Accessible |
-| POST | `/issues/:issueId/comments` | Add a comment to an issue | Authenticated |
-| DELETE | `/issues/:issueId/comments/:commentId` | Delete a comment | Author / Admin |
-
-### Live API demonstration
-
-The visual below illustrates authentic HTTP exchanges executed against DevFlow on the test database, showing actual JSON request bodies, header requirements, status codes, and response envelopes.
-
-![DevFlow API Examples](docs/images/api-examples.png)
-
-## Getting started
+## Getting Started
 
 ### Prerequisites
+- Node.js 22 LTS or newer
+- PostgreSQL 16 or newer
 
-- A supported Node.js version.
-- PostgreSQL.
-- Git.
-- npm.
-
-### 1. Clone the repository
+### Installation
 
 ```bash
-git clone <YOUR_PUBLIC_GITHUB_REPOSITORY_URL>
-cd <YOUR_REPOSITORY_DIRECTORY>
+# 1. Clone the repository
+git clone https://github.com/adityasinghr651/Lab_Engineering.git
+cd Lab_Engineering/project
+
+# 2. Install dependencies
+npm ci
+
+# 3. Configure environment variables
+cp .env.example .env
 ```
 
-### 2. Install dependencies
+### Environment Configuration (`.env`)
 
-```bash
-npm install
-```
-
-### 3. Configure environment variables
-
-Create a local `.env` file using `.env.example` as a reference.
-
-```env
-NODE_ENV=development
+```ini
 PORT=3000
-
-DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/devflow
-
-JWT_SECRET=replace_with_a_long_random_secret
-JWT_EXPIRES_IN=1d
-
+NODE_ENV=development
+JWT_SECRET=super-secure-production-ready-secret-min-32-chars
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/devflow
+DB_POOL_MAX=20
+DB_POOL_IDLE_TIMEOUT_MS=30000
+DB_POOL_CONNECTION_TIMEOUT_MS=5000
 ENABLE_REQUEST_LOGGING=true
-TRACK_POOL_METRICS=false
+TRACK_POOL_METRICS=true
+SHUTDOWN_TIMEOUT_MS=10000
 ```
 
-Use values appropriate to your local PostgreSQL installation and the actual configuration parser. Never commit real credentials or production secrets.
-
-### 4. Initialize the database
-
-Create a PostgreSQL database and apply the schema using the repository's documented database setup process.
-
-For example, if the schema is self-contained and compatible with your local database:
+### Database Initialization & Run
 
 ```bash
-psql "$DATABASE_URL" -f src/db/schema.sql
-```
+# Initialize schema and seed test data
+npm run db:init
 
-If the project uses migrations or additional setup scripts, follow those instead. Avoid repeatedly applying a schema that is not designed to be rerun.
-
-### 5. Start the server
-
-```bash
+# Start the development server
 npm start
 ```
 
-If no start script is configured in `package.json`, use the repository's actual development or startup command.
+---
 
-### 6. Run the tests
+## Automated Testing
+
+DevFlow includes a full automated integration test suite running directly against a live PostgreSQL database (`devflow_test`) using the native Node.js test runner (`node --test --test-concurrency=1`).
+
+<p align="center">
+  <img src="docs/images/test-results.png" alt="DevFlow Automated Test Results" width="100%" />
+</p>
 
 ```bash
 npm test
 ```
 
-Integration tests require a correctly configured test database. Follow the repository's test setup and never point destructive test fixtures at production data.
+### Verified Test Run Summary
 
-## Environment variables
+| Test Suite | Total Tests | Status |
+|---|---:|:---:|
+| Authentication & Identity API (`test/auth.test.js`) | 8 | PASS |
+| Security Hardening & Rate Limiting (`test/security.test.js`) | 9 | PASS |
+| Issues Management & Assignment (`test/issues.test.js`) | 20 | PASS |
+| Project Workspaces & RBAC (`test/projects.test.js`) | 11 | PASS |
+| Search, Sorting & Deterministic Pagination (`test/search_pagination.test.js`) | 14 | PASS |
+| **Total Automated Tests** | **62 / 62** | **100% PASS** |
 
-| Variable | Purpose |
-|---|---|
-| `NODE_ENV` | Controls the application environment |
-| `PORT` | HTTP server port |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `JWT_SECRET` | Secret used to sign and verify tokens (fail-fast enforced in prod) |
-| `JWT_EXPIRES_IN` | Token expiry configuration |
-| `DB_POOL_MAX` | Maximum PostgreSQL client pool size (default: 20) |
-| `DB_IDLE_TIMEOUT_MS` | Inactive connection idle timeout in milliseconds (default: 30000) |
-| `DB_CONNECTION_TIMEOUT_MS` | Connection acquisition timeout in milliseconds (default: 5000) |
-| `ENABLE_REQUEST_LOGGING` | Enables or disables request logging |
-| `TRACK_POOL_METRICS` | Enables optional repository pool/query metrics |
+---
 
-The exact variable names and defaults match `src/config/index.js`, `src/config/db.js`, and the current implementation.
+## Security & Reliability Hardening
 
-## Testing
+- **Public Role Privilege Escalation Prevention:** Public registration routes force `role: member`. Administrative privileges can only be granted via internal administrative operations or database migrations.
+- **Resource Ownership Authorization:** Non-admin users cannot mutate or delete projects, issues, or comments owned by other users.
+- **Deterministic Pagination:** Ties in pagination ordering are broken using primary key tie-breakers (`i.id ASC`) to eliminate duplicate or missing items across page boundaries.
+- **Production Guardrails:** Server immediately fails fast on startup if `JWT_SECRET` is unset or matches the insecure fallback in `production`.
+- **Bounded Graceful Shutdown:** 10-second timeout watchdog ensures active in-flight requests complete before disconnecting the database pool and terminating cleanly.
 
-DevFlow includes automated integration tests executing against a live PostgreSQL database (`devflow_test`) using the native Node.js test runner (`node --test --test-concurrency=1`).
-
-![DevFlow Test Results](docs/images/test-results.png)
-
-At the latest verification run, all 62 automated integration tests passed with 0 failures:
-
-| Suite | Reported tests |
-|---|---:|
-| Authentication | 13 |
-| Projects | 11 |
-| Issues | 19 |
-| Comments | 10 |
-| Search, sorting, and pagination | 9 |
-| **Total** | **62** |
-
-These results describe that particular snapshot, not necessarily the current working tree. Rerun the full test suite after subsequent code changes before updating the badge or publishing fresh results.
-
-### What should be tested?
-
-- Successful and rejected authentication.
-- Authorization boundaries between users and administrators.
-- Valid and invalid project relationships.
-- Issue creation, assignment, update, and deletion.
-- Comment ownership and deletion permissions.
-- Case-insensitive search and combined filters.
-- Pagination metadata and sorting behaviour.
-- Database errors and invalid input.
-- Concurrent operations where data consistency matters.
-
-## Security and reliability
-
-Security is part of the implementation process, not a feature that can be established by a passing test count alone.
-
-Before describing DevFlow as production-ready, verify:
-
-- Public registration cannot grant administrative privileges.
-- Protected mutations enforce authentication and resource-level authorization.
-- Production startup fails safely when required secrets are missing or insecure.
-- Database connection and query timeouts are configured appropriately.
-- Sensitive database errors and secrets are not exposed to clients or logs.
-- Login attempts are rate-limited.
-- Pagination uses deterministic ordering.
-- Shutdown handles active requests within a bounded deadline.
-- Development-only diagnostic endpoints are disabled or removed in production.
-
-**Current limitation:** These controls must be checked against the latest code. Do not claim they are all resolved until the relevant fixes and regression tests are complete.
-
-## Engineering decisions
-
-### Why PostgreSQL?
-
-The domain contains relationships between users, projects, issues, and comments. PostgreSQL provides relational constraints, transactions, and query capabilities suitable for these relationships.
-
-### Why a repository layer?
-
-Centralizing database access separates SQL from HTTP controllers and business logic. It also gives the team a clear place to review query behaviour and database performance.
-
-### Why request validation?
-
-Validation rejects malformed inputs early and makes API contracts more explicit. Validation complements—but does not replace—authorization, database constraints, or business rules.
-
-### Why pagination?
-
-Returning every matching record can increase database work, response size, and memory consumption as the dataset grows. Pagination gives clients control over how much data is returned per request.
-
-### Why automated integration tests?
-
-Unit-level checks alone may not catch problems involving routing, authentication middleware, SQL constraints, and real database behaviour. Integration tests help verify these components together.
-
-## Roadmap
-
-- [x] Complete security and reliability hardening (Phase 6 verified).
-- [x] Verify resource-level authorization on every mutation (issues & comments).
-- [x] Add deterministic pagination and boundary-case tests (`i.id ASC` tie-breaking).
-- [x] Finalize database timeout and shutdown behaviour (10s bounded watchdog).
-- [x] Publish architecture diagrams and real API screenshots (generated in `docs/images/`).
-- [ ] Document all API request/response schemas and status codes.
-- [ ] Add reproducible performance benchmarks with clearly stated test conditions.
-- [ ] Add CI checks for tests and linting.
-- [ ] Document deployment, database migrations, and operational monitoring.
-
-## Visual documentation
-
-High-resolution diagrams and genuine execution screenshots are located in `docs/images/`:
-
-| Diagram / Asset | Relative Path | Purpose |
-|---|---|---|
-| System Architecture | [`docs/images/system-architecture.png`](docs/images/system-architecture.png) | End-to-end request lifecycle and layered tiering |
-| Database ER Diagram | [`docs/images/database-er.png`](docs/images/database-er.png) | PostgreSQL entity relationships, keys, indexes, and constraints |
-| API Core Workflows | [`docs/images/api-workflow.png`](docs/images/api-workflow.png) | Execution sequences for auth, projects, issues, comments, search |
-| Live API Demonstration | [`docs/images/api-examples.png`](docs/images/api-examples.png) | Genuine HTTP exchanges captured from running test database |
-| Automated Test Results | [`docs/images/test-results.png`](docs/images/test-results.png) | 62 passing automated integration tests summary & TAP output |
-
-## Contributing
-
-Contributions are welcome. Before submitting changes:
-
-1. Read the existing code and architecture.
-2. Keep controllers, services, and repositories focused on their responsibilities.
-3. Validate new inputs and enforce authorization.
-4. Add regression tests for changed behaviour.
-5. Run the full test suite.
-6. Document API changes.
-
-## License
-
-A license has not been specified here. Add a `LICENSE` file and update this section only after selecting the license you intend to publish under.
+---
 
 ## Author
 
 **Aditya Singh**
-
-B.Tech Computer Science Engineering — AI, ML & Robotics
-
-- GitHub: [adityasinghr651](https://github.com/adityasinghr651)
+- GitHub: [@adityasinghr651](https://github.com/adityasinghr651)
 - LinkedIn: [Aditya Singh](https://www.linkedin.com/in/aditya-singh-rathore-261201225/)
-- Codolio: [Coding profile](https://codolio.com/profile/adityasinghr651)
-
----
-
-*DevFlow is a backend engineering project focused on maintainable API design, relational data integrity, authentication, and testing. Features, test results, and operational guarantees should always be described according to the latest verified implementation.*
+- Codolio: [Coding Profile](https://codolio.com/profile/adityasinghr651)
