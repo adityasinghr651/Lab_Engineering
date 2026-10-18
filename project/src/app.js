@@ -29,6 +29,10 @@ app.get('/crash-test', (req, res, next) => {
   }
 });
 
+// Issues routes
+const issueRoutes = require('./routes/issue.routes');
+app.use('/issues', issueRoutes);
+
 // 404 handler — jab koi route match na ho
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
